@@ -1,0 +1,6 @@
+<resources>
+    <!-- 화면은 Compose 테마(ui/theme/Theme.kt)가 그립니다. 이 테마는 창 배경만 정합니다. -->
+    <style name="Theme.Chageunchageun" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:windowBackground">@color/sand</item>
+    </style>
+</resources>
