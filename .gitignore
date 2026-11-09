@@ -1,0 +1,18 @@
+# Android / Gradle
+.gradle/
+.kotlin/
+build/
+/local.properties
+/captures
+.externalNativeBuild
+.cxx
+*.apk
+*.aab
+.DS_Store
+
+# IDE: 공유 설정 외 개인 설정은 올리지 않습니다
+.idea/
+*.iml
+
+# graft's local graph cache — regenerable, not committed (run `graft build`).
+/graft/
