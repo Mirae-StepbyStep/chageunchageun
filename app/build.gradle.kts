@@ -7,11 +7,11 @@ plugins {
 }
 
 android {
-    namespace = "com.example.chaguenchaguen"
+    namespace = "com.mirae.chageunchageun"
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "com.example.chaguenchaguen"
+        applicationId = "com.mirae.chageunchageun"
         minSdk = 28 // Pleos Playground 배포 앱 요구사항
         targetSdk = 35 // Sample App 기준
         versionCode = 1
