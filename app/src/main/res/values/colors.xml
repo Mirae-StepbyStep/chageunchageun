@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- PRD 앱 디자인 룰의 5색 -->
+    <color name="hyundai_blue">#FF002C5F</color>
+    <color name="sand">#FFF6F3F2</color>
+    <color name="active_blue">#FF00AAD2</color>
+    <color name="black">#FF000000</color>
+    <color name="white">#FFFFFFFF</color>
+</resources>
