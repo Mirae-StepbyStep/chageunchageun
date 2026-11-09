@@ -1,0 +1,53 @@
+package com.mirae.chageunchageun.feature.warning
+
+import com.mirae.chageunchageun.core.model.Signal
+import com.mirae.chageunchageun.core.model.SituationEvent
+import com.mirae.chageunchageun.core.model.Source
+import com.mirae.chageunchageun.core.model.SpeechPriority
+import com.mirae.chageunchageun.core.model.WarningType
+import com.mirae.chageunchageun.core.port.SpeechOutput
+import com.mirae.chageunchageun.core.port.WarningSource
+import com.mirae.chageunchageun.domain.guidance.WarningGuide
+import com.mirae.chageunchageun.domain.guidance.WarningGuidance
+import com.mirae.chageunchageun.runtime.DriveRuntime
+import kotlinx.coroutines.CancellationException
+
+/**
+ * 새로 켜진 경고를 알립니다. 화면이 닫혀 있어도 말해야 하므로 화면 상태와 분리합니다.
+ * 경고 문장은 E1 축소 대상이 아니므로 다시 켜지면 같은 문장을 그대로 말합니다.
+ */
+class WarningAnnouncer(
+    private val warnings: WarningSource,
+    private val speech: SpeechOutput,
+    private val runtime: DriveRuntime,
+) {
+    suspend fun run() {
+        var known = emptySet<WarningType>()
+        // ponytail: 순서대로 말하므로 위험 경고도 재생 중인 주의 문장이 끝난 뒤 나옵니다. 끊어야 하면 실제 TTS 어댑터와 함께 바꿉니다.
+        warnings.activeWarnings.collect { signal ->
+            // 값을 못 받은 것은 해제가 아닙니다.
+            if (signal !is Signal.Value) return@collect
+            val added = WarningGuidance.ordered(signal.value - known)
+            known = signal.value
+            added.forEach { announce(it, signal.source) }
+        }
+    }
+
+    private suspend fun announce(guide: WarningGuide, source: Source) {
+        runtime.report(
+            SituationEvent(
+                id = WarningGuidance.eventId(guide.type),
+                severity = guide.severity,
+                facts = mapOf("source" to source.name),
+            ),
+        )
+        val text = WarningGuidance.speech(guide) ?: return
+        try {
+            speech.speak(text, SpeechPriority.WARNING)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (_: Exception) {
+            // 음성이 실패해도 화면 안내와 다음 경고는 계속되어야 합니다.
+        }
+    }
+}
