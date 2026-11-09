@@ -10,15 +10,21 @@ import com.mirae.chageunchageun.core.model.WarningType
 import com.mirae.chageunchageun.core.port.SpeechOutput
 import com.mirae.chageunchageun.core.port.WarningSource
 import com.mirae.chageunchageun.demo.FakeDrivingSignals
+import com.mirae.chageunchageun.demo.FakeSpeechOutput
 import com.mirae.chageunchageun.demo.FakeVehicleBus
+import com.mirae.chageunchageun.demo.FakeWarningSource
+import com.mirae.chageunchageun.demo.ScenarioParser
+import com.mirae.chageunchageun.demo.ScenarioPlayer
 import com.mirae.chageunchageun.domain.guidance.WarningGuidance
 import com.mirae.chageunchageun.runtime.DriveRuntime
+import java.io.File
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
@@ -139,6 +145,25 @@ class WarningAnnouncerTest {
         assertEquals(
             listOf(sentence(WarningType.BRAKE_FLUID), sentence(WarningType.TIRE_PRESSURE)),
             speech.spoken.map { it.first },
+        )
+    }
+
+    @Test
+    fun `c1 시나리오는 공기압과 브레이크액만 말한다`() = runTest {
+        val bus = FakeVehicleBus()
+        val runtime = DriveRuntime(FakeDrivingSignals(bus), backgroundScope)
+        backgroundScope.launch {
+            WarningAnnouncer(FakeWarningSource(bus), FakeSpeechOutput(bus), runtime).run()
+        }
+        runCurrent()
+
+        val scenario = ScenarioParser.parse(File("src/main/assets/scenarios/c1_warning.json").readText())
+        launch { ScenarioPlayer(bus).play(scenario) }
+        advanceUntilIdle()
+
+        assertEquals(
+            listOf(sentence(WarningType.TIRE_PRESSURE), sentence(WarningType.BRAKE_FLUID)),
+            bus.spoken.value,
         )
     }
 
