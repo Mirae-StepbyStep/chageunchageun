@@ -21,6 +21,7 @@ import com.mirae.chageunchageun.demo.FakeWarningSource
 import com.mirae.chageunchageun.demo.Scenario
 import com.mirae.chageunchageun.demo.ScenarioParser
 import com.mirae.chageunchageun.demo.ScenarioPlayer
+import com.mirae.chageunchageun.feature.warning.WarningAnnouncer
 import com.mirae.chageunchageun.platform.car.CarDriveStateSource
 import com.mirae.chageunchageun.platform.car.CarSession
 import com.mirae.chageunchageun.platform.car.CarVehicleSpecSource
@@ -32,6 +33,7 @@ import com.mirae.chageunchageun.platform.vehicle.PleosSteeringSource
 import com.mirae.chageunchageun.platform.vehicle.PleosVehicleSession
 import com.mirae.chageunchageun.platform.vehicle.PleosWarningSource
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
 
 /**
  * 앱의 조립 지점(수동 DI). 포트마다 실제 구현(platform/)과 가짜 구현(demo/)을 둘 다 만들어 두고,
@@ -81,6 +83,11 @@ class AppGraph(private val context: Context, val appScope: CoroutineScope) {
 
     // 앱 공용 런타임
     val driveRuntime = DriveRuntime(driveState, appScope)
+
+    init {
+        // C1 경고 음성은 어떤 화면이 열려 있어도 나와야 합니다.
+        appScope.launch { WarningAnnouncer(warningSource, speechOutput, driveRuntime).run() }
+    }
 
     private fun <P> switch(id: PortId, real: P, fake: P) = PortSwitch(portModes, id, real, fake)
 

@@ -5,14 +5,9 @@ import com.mirae.chageunchageun.core.model.Signal
 import com.mirae.chageunchageun.core.model.Source
 import com.mirae.chageunchageun.core.model.WarningType
 import com.mirae.chageunchageun.core.port.WarningSource
-import com.mirae.chageunchageun.demo.FakeDrivingSignals
-import com.mirae.chageunchageun.demo.FakeSpeechOutput
-import com.mirae.chageunchageun.demo.FakeVehicleBus
-import com.mirae.chageunchageun.runtime.DriveRuntime
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -31,11 +26,7 @@ class WarningViewModelTest {
         override val activeWarnings = warnings
     }
 
-    private fun TestScope.viewModel(): WarningViewModel {
-        val bus = FakeVehicleBus()
-        val runtime = DriveRuntime(FakeDrivingSignals(bus), backgroundScope)
-        return WarningViewModel(source, WarningAnnouncer(source, FakeSpeechOutput(bus), runtime))
-    }
+    private fun viewModel() = WarningViewModel(source)
 
     @Test
     fun `위험 경고가 먼저 오고 출처를 함께 준다`() = runTest {
