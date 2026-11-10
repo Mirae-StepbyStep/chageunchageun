@@ -1,32 +1,43 @@
 package com.mirae.chageunchageun.runtime
 
 import android.content.Context
-import com.mirae.chageunchageun.core.port.DrivingSignals
+import com.mirae.chageunchageun.core.port.ControlsSource
+import com.mirae.chageunchageun.core.port.DriveStateSource
 import com.mirae.chageunchageun.core.port.LocationSource
-import com.mirae.chageunchageun.core.port.SeatController
 import com.mirae.chageunchageun.core.port.SpeechInput
 import com.mirae.chageunchageun.core.port.SpeechOutput
+import com.mirae.chageunchageun.core.port.SteeringSource
 import com.mirae.chageunchageun.core.port.VehicleSpecSource
 import com.mirae.chageunchageun.core.port.WarningSource
-import com.mirae.chageunchageun.demo.DemoSeatPlant
-import com.mirae.chageunchageun.demo.FakeDrivingSignals
+import com.mirae.chageunchageun.demo.FakeControlsSource
+import com.mirae.chageunchageun.demo.FakeDriveStateSource
 import com.mirae.chageunchageun.demo.FakeLocationSource
-import com.mirae.chageunchageun.demo.FakeSeatController
 import com.mirae.chageunchageun.demo.FakeSpeechInput
 import com.mirae.chageunchageun.demo.FakeSpeechOutput
+import com.mirae.chageunchageun.demo.FakeSteeringSource
 import com.mirae.chageunchageun.demo.FakeVehicleBus
 import com.mirae.chageunchageun.demo.FakeVehicleSpecSource
 import com.mirae.chageunchageun.demo.FakeWarningSource
 import com.mirae.chageunchageun.demo.Scenario
 import com.mirae.chageunchageun.demo.ScenarioParser
 import com.mirae.chageunchageun.demo.ScenarioPlayer
+import com.mirae.chageunchageun.platform.car.CarDriveStateSource
+import com.mirae.chageunchageun.platform.car.CarSession
+import com.mirae.chageunchageun.platform.car.CarVehicleSpecSource
+import com.mirae.chageunchageun.platform.nav.PleosLocationSource
+import com.mirae.chageunchageun.platform.speech.PleosSpeechInput
+import com.mirae.chageunchageun.platform.speech.PleosSpeechOutput
+import com.mirae.chageunchageun.platform.vehicle.PleosControlsSource
+import com.mirae.chageunchageun.platform.vehicle.PleosSteeringSource
+import com.mirae.chageunchageun.platform.vehicle.PleosVehicleSession
+import com.mirae.chageunchageun.platform.vehicle.PleosWarningSource
 import kotlinx.coroutines.CoroutineScope
 
 /**
- * 앱의 조립 지점(수동 DI). 포트마다 실제 구현과 가짜 구현 중 하나를 여기서 고릅니다.
+ * 앱의 조립 지점(수동 DI). 포트마다 실제 구현(platform/)과 가짜 구현(demo/)을 둘 다 만들어 두고,
+ * [portModes]에 따라 하나를 내보냅니다. 기본은 모두 가짜이며 디버그 패널에서 포트별로 바꿉니다.
  *
- * v0: 모든 포트가 가짜(demo/)입니다.
- * v1: platform/ 어댑터가 생기면 해당 포트만 실제 구현으로 바꿉니다. feature 코드는 바뀌지 않습니다.
+ * 어댑터를 구현할 때는 platform/의 자기 파일 본문만 채웁니다. 이 파일은 바꾸지 않아도 됩니다.
  * 이 파일을 바꾸려면 PR 리뷰를 받습니다.
  */
 class AppGraph(private val context: Context, val appScope: CoroutineScope) {
@@ -34,19 +45,44 @@ class AppGraph(private val context: Context, val appScope: CoroutineScope) {
     // 시연·테스트용 가짜 차량
     val fakeBus = FakeVehicleBus()
     val scenarioPlayer = ScenarioPlayer(fakeBus)
-    private val seatPlant = DemoSeatPlant(fakeBus, appScope)
+
+    // 실제 차량 연결. 어댑터가 처음 쓸 때 초기화됩니다.
+    val vehicleSession = PleosVehicleSession(context)
+    val carSession = CarSession(context)
+
+    /** 포트별 실제·가짜 선택. */
+    val portModes = PortModes()
 
     // 포트
-    val drivingSignals: DrivingSignals = FakeDrivingSignals(fakeBus)
-    val warningSource: WarningSource = FakeWarningSource(fakeBus)
-    val seatController: SeatController = FakeSeatController(fakeBus, seatPlant)
-    val vehicleSpec: VehicleSpecSource = FakeVehicleSpecSource(fakeBus)
-    val locationSource: LocationSource = FakeLocationSource(fakeBus)
-    val speechOutput: SpeechOutput = FakeSpeechOutput(fakeBus)
-    val speechInput: SpeechInput = FakeSpeechInput(fakeBus)
+    val driveState: DriveStateSource = SwitchingDriveStateSource(
+        switch(PortId.DRIVE_STATE, CarDriveStateSource(carSession), FakeDriveStateSource(fakeBus)),
+    )
+    val controls: ControlsSource = SwitchingControlsSource(
+        switch(PortId.CONTROLS, PleosControlsSource(vehicleSession), FakeControlsSource(fakeBus)),
+    )
+    val steering: SteeringSource = SwitchingSteeringSource(
+        switch(PortId.STEERING, PleosSteeringSource(vehicleSession), FakeSteeringSource(fakeBus)),
+    )
+    val warningSource: WarningSource = SwitchingWarningSource(
+        switch(PortId.WARNING, PleosWarningSource(vehicleSession), FakeWarningSource(fakeBus)),
+    )
+    val vehicleSpec: VehicleSpecSource = SwitchingVehicleSpecSource(
+        switch(PortId.VEHICLE_SPEC, CarVehicleSpecSource(carSession), FakeVehicleSpecSource(fakeBus)),
+    )
+    val locationSource: LocationSource = SwitchingLocationSource(
+        switch(PortId.LOCATION, PleosLocationSource(context), FakeLocationSource(fakeBus)),
+    )
+    val speechOutput: SpeechOutput = SwitchingSpeechOutput(
+        switch(PortId.SPEECH_OUT, PleosSpeechOutput(context), FakeSpeechOutput(fakeBus)),
+    )
+    val speechInput: SpeechInput = SwitchingSpeechInput(
+        switch(PortId.SPEECH_IN, PleosSpeechInput(context), FakeSpeechInput(fakeBus)),
+    )
 
     // 앱 공용 런타임
-    val driveRuntime = DriveRuntime(drivingSignals, appScope)
+    val driveRuntime = DriveRuntime(driveState, appScope)
+
+    private fun <P> switch(id: PortId, real: P, fake: P) = PortSwitch(portModes, id, real, fake)
 
     fun scenarioNames(): List<String> =
         context.assets.list("scenarios").orEmpty().filter { it.endsWith(".json") }.sorted()

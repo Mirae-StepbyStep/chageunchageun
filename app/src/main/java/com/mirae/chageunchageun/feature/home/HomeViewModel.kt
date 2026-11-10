@@ -4,11 +4,13 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.mirae.chageunchageun.core.model.DrivePhase
 import com.mirae.chageunchageun.core.model.Gear
+import com.mirae.chageunchageun.core.model.Lamp
+import com.mirae.chageunchageun.core.model.LampState
 import com.mirae.chageunchageun.core.model.Source
-import com.mirae.chageunchageun.core.model.TurnSignal
 import com.mirae.chageunchageun.core.model.sourceOrNull
 import com.mirae.chageunchageun.core.model.valueOrNull
-import com.mirae.chageunchageun.core.port.DrivingSignals
+import com.mirae.chageunchageun.core.port.ControlsSource
+import com.mirae.chageunchageun.core.port.DriveStateSource
 import com.mirae.chageunchageun.runtime.DriveRuntime
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -20,30 +22,27 @@ data class HomeUi(
     val phase: DrivePhase = DrivePhase.DRIVING,
     val gear: Gear? = null,
     val gearSource: Source? = null,
-    val turnSignal: TurnSignal? = null,
-    val turnSignalSource: Source? = null,
-    val speedKmh: Int? = null,
+    val highBeam: LampState? = null,
+    val highBeamSource: Source? = null,
 )
 
 /**
  * 예시 기능: 포트 → ViewModel → 화면.
  * 생성자로 포트만 받으므로 JVM 테스트에서는 Fake 포트를 넣으면 됩니다.
  */
-class HomeViewModel(signals: DrivingSignals, runtime: DriveRuntime) : ViewModel() {
+class HomeViewModel(driveState: DriveStateSource, controls: ControlsSource, runtime: DriveRuntime) : ViewModel() {
 
     val ui: StateFlow<HomeUi> = combine(
         runtime.phase,
-        signals.gear,
-        signals.turnSignal,
-        signals.speedMps,
-    ) { phase, gear, turn, speed ->
+        driveState.gear,
+        controls.lamp(Lamp.HIGH_BEAM),
+    ) { phase, gear, highBeam ->
         HomeUi(
             phase = phase,
             gear = gear.valueOrNull(),
             gearSource = gear.sourceOrNull(),
-            turnSignal = turn.valueOrNull(),
-            turnSignalSource = turn.sourceOrNull(),
-            speedKmh = speed.valueOrNull()?.let { (it * 3.6f).toInt() },
+            highBeam = highBeam.valueOrNull(),
+            highBeamSource = highBeam.sourceOrNull(),
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), HomeUi())
 }

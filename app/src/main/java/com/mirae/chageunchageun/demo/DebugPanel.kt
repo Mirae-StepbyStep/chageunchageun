@@ -24,25 +24,34 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.mirae.chageunchageun.core.model.Gear
-import com.mirae.chageunchageun.core.model.TurnSignal
+import com.mirae.chageunchageun.core.model.Lamp
+import com.mirae.chageunchageun.core.model.LampState
 import com.mirae.chageunchageun.core.model.WarningType
+import com.mirae.chageunchageun.core.model.WiperState
 import com.mirae.chageunchageun.runtime.AppGraph
+import com.mirae.chageunchageun.runtime.PortId
+import com.mirae.chageunchageun.runtime.PortMode
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 
-/** 개발·시연용 패널(debug 빌드에서만 메뉴에 보임). 가짜 차량 값을 직접 바꾸고 시나리오를 재생합니다. */
+/**
+ * 개발·시연용 패널(debug 빌드에서만 메뉴에 보임).
+ * 포트별로 실제·가짜를 고르고, 가짜 차량 값을 직접 바꾸고, 시나리오를 재생합니다.
+ */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun DebugPanel(graph: AppGraph) {
     val bus = graph.fakeBus
     val scope = rememberCoroutineScope()
     val gear by bus.gear.collectAsStateWithLifecycle()
-    val turn by bus.turnSignal.collectAsStateWithLifecycle()
+    val lamps by bus.lamps.collectAsStateWithLifecycle()
+    val wiper by bus.frontWiper.collectAsStateWithLifecycle()
+    val brake by bus.brakePressed.collectAsStateWithLifecycle()
     val ux by bus.uxRestricted.collectAsStateWithLifecycle()
-    val speed by bus.speedMps.collectAsStateWithLifecycle()
     val steering by bus.steeringAngleDeg.collectAsStateWithLifecycle()
     val warnings by bus.warnings.collectAsStateWithLifecycle()
     val spoken by bus.spoken.collectAsStateWithLifecycle()
+    val modes by graph.portModes.all.collectAsStateWithLifecycle()
     var playing by remember { mutableStateOf<Job?>(null) }
     var lastNote by remember { mutableStateOf("") }
 
@@ -50,7 +59,25 @@ fun DebugPanel(graph: AppGraph) {
         Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(24.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        Text("디버그 패널 (모든 값은 시연 신호)", style = MaterialTheme.typography.headlineSmall)
+        Text("디버그 패널", style = MaterialTheme.typography.headlineSmall)
+
+        Text("포트 연결 (선택하면 실제 차량, 해제하면 가짜 차량)")
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            PortId.entries.forEach { id ->
+                val real = modes.getValue(id) == PortMode.REAL
+                FilterChip(
+                    selected = real,
+                    onClick = { graph.portModes.set(id, if (real) PortMode.FAKE else PortMode.REAL) },
+                    label = { Text("${id.label}: ${if (real) "실제" else "가짜"}") },
+                )
+            }
+        }
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            OutlinedButton(onClick = { graph.portModes.setAll(PortMode.REAL) }) { Text("모두 실제") }
+            OutlinedButton(onClick = { graph.portModes.setAll(PortMode.FAKE) }) { Text("모두 가짜") }
+        }
+
+        Text("가짜 차량 (아래 값은 모두 시연 신호)", style = MaterialTheme.typography.titleMedium)
 
         Text("기어")
         FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -58,16 +85,26 @@ fun DebugPanel(graph: AppGraph) {
                 FilterChip(selected = gear == it, onClick = { bus.gear.value = it }, label = { Text(it.name) })
             }
         }
-        Text("방향지시등")
-        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            TurnSignal.entries.forEach {
-                FilterChip(selected = turn == it, onClick = { bus.turnSignal.value = it }, label = { Text(it.name) })
-            }
-        }
         FilterChip(selected = ux, onClick = { bus.uxRestricted.value = !ux }, label = { Text("주행 규제") })
 
-        Text("속도 ${(speed * 3.6f).toInt()} km/h")
-        Slider(value = speed, onValueChange = { bus.speedMps.value = it }, valueRange = 0f..30f)
+        Text("등화·와이퍼·브레이크")
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Lamp.entries.forEach { lamp ->
+                val on = lamps.getValue(lamp) != LampState.OFF
+                FilterChip(
+                    selected = on,
+                    onClick = { bus.setLamp(lamp, if (on) LampState.OFF else LampState.ON) },
+                    label = { Text(lamp.name) },
+                )
+            }
+            FilterChip(
+                selected = wiper == WiperState.ON,
+                onClick = { bus.frontWiper.value = if (wiper == WiperState.ON) WiperState.OFF else WiperState.ON },
+                label = { Text("앞 와이퍼") },
+            )
+            FilterChip(selected = brake, onClick = { bus.brakePressed.value = !brake }, label = { Text("브레이크") })
+        }
+
         Text("조향각 ${steering.toInt()}°")
         Slider(value = steering, onValueChange = { bus.steeringAngleDeg.value = it }, valueRange = -540f..540f)
 
@@ -83,7 +120,6 @@ fun DebugPanel(graph: AppGraph) {
         }
         FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             OutlinedButton(onClick = { bus.arrivals.tryEmit("시연 주차장") }) { Text("목적지 도착") }
-            OutlinedButton(onClick = { bus.brakePressed.value = !bus.brakePressed.value }) { Text("브레이크 토글") }
         }
 
         Text("시나리오")

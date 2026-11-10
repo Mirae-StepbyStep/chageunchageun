@@ -7,9 +7,36 @@
         android:required="true" />
 
     <!--
-      Pleos 권한은 실제 어댑터를 붙일 때(v1) 사용하는 API의 최소 권한만 추가합니다.
-      예: <uses-permission android:name="pleos.car.permission.CAR_LIGHTS" />
+      차량 권한. 어댑터(platform/)별로 묶어 미리 선언해 두었습니다.
+      어댑터를 구현하다 권한이 더 필요하면 자기 어댑터 묶음 안에만 추가합니다(다른 묶음은 건드리지 않음).
+      Vehicle SDK 권한은 SDK 2.3.2의 @RequiresCustomPermission에서 확인했습니다.
+      "미확인"은 PRD의 SDK 표에서 가져온 이름이며 SDK를 붙일 때 확인합니다.
     -->
+
+    <!-- platform/car/CarDriveStateSource (후): 기어 GEAR_SELECTION. 주행 규제는 권한 없음 -->
+    <uses-permission android:name="android.car.permission.CAR_POWERTRAIN" />
+
+    <!-- platform/car/CarVehicleSpecSource (민서): INFO_EXTERIOR_DIMENSIONS -->
+    <uses-permission android:name="android.car.permission.CAR_INFO" />
+
+    <!-- platform/vehicle/PleosControlsSource (후): Light 상태, Wiper 상태, Brake 페달 -->
+    <uses-permission android:name="pleos.car.permission.CAR_LIGHTS" />
+    <uses-permission android:name="pleos.car.permission.CAR_WINDOWS" />
+    <uses-permission android:name="pleos.car.permission.CAR_DRIVE" />
+
+    <!-- platform/vehicle/PleosSteeringSource (민서): 조향각. 위의 CAR_DRIVE를 함께 씁니다 -->
+
+    <!-- platform/vehicle/PleosWarningSource (재균): Safety 경고, Telltale. PRIVATE은 주최 측 승인 필요 -->
+    <uses-permission android:name="pleos.car.permission.CAR_SAFETY" />
+    <uses-permission android:name="pleos.car.permission.PRIVATE_CAR_SAFETY" />
+
+    <!-- platform/nav/PleosLocationSource (민서): FusedLocation, NaviHelper. 미확인 -->
+    <uses-permission android:name="pleos.car.permission.FUSED_LOCATION" />
+    <uses-permission android:name="pleos.car.permission.NAVI_ROUTE" />
+
+    <!-- platform/speech/PleosSpeechOutput, PleosSpeechInput (E2 담당): TTS, STT. 미확인 -->
+    <uses-permission android:name="pleos.car.permission.TTS_SERVICE" />
+    <uses-permission android:name="pleos.car.permission.STT_SERVICE" />
 
     <application
         android:name=".runtime.ChageunApp"

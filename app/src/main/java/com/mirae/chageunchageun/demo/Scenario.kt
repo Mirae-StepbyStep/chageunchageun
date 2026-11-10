@@ -1,8 +1,10 @@
 package com.mirae.chageunchageun.demo
 
 import com.mirae.chageunchageun.core.model.Gear
-import com.mirae.chageunchageun.core.model.TurnSignal
+import com.mirae.chageunchageun.core.model.Lamp
+import com.mirae.chageunchageun.core.model.LampState
 import com.mirae.chageunchageun.core.model.WarningType
+import com.mirae.chageunchageun.core.model.WiperState
 import kotlinx.coroutines.delay
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
@@ -20,11 +22,12 @@ data class ScenarioStep(
     val atMs: Long,
     val note: String? = null,
     val gear: Gear? = null,
-    val speedMps: Float? = null,
-    val brakePressed: Boolean? = null,
-    val turnSignal: TurnSignal? = null,
-    val steeringAngleDeg: Float? = null,
     val uxRestricted: Boolean? = null,
+    /** 적은 등화만 바뀝니다. 예: { "LOW_BEAM": "ON" } */
+    val lamps: Map<Lamp, LampState>? = null,
+    val frontWiper: WiperState? = null,
+    val brakePressed: Boolean? = null,
+    val steeringAngleDeg: Float? = null,
     val warnings: Set<WarningType>? = null,
     val arrivedAt: String? = null,
     val heard: String? = null,
@@ -51,11 +54,11 @@ class ScenarioPlayer(private val bus: FakeVehicleBus) {
 
     fun apply(step: ScenarioStep) {
         step.gear?.let { bus.gear.value = it }
-        step.speedMps?.let { bus.speedMps.value = it }
-        step.brakePressed?.let { bus.brakePressed.value = it }
-        step.turnSignal?.let { bus.turnSignal.value = it }
-        step.steeringAngleDeg?.let { bus.steeringAngleDeg.value = it }
         step.uxRestricted?.let { bus.uxRestricted.value = it }
+        step.lamps?.let { bus.lamps.value = bus.lamps.value + it }
+        step.frontWiper?.let { bus.frontWiper.value = it }
+        step.brakePressed?.let { bus.brakePressed.value = it }
+        step.steeringAngleDeg?.let { bus.steeringAngleDeg.value = it }
         step.warnings?.let { bus.warnings.value = it }
         step.arrivedAt?.let { bus.arrivals.tryEmit(it) }
         step.heard?.let { bus.heard.tryEmit(it) }
