@@ -17,7 +17,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.mirae.chageunchageun.core.model.DrivePhase
-import com.mirae.chageunchageun.core.model.TurnSignal
+import com.mirae.chageunchageun.core.model.LampState
 import com.mirae.chageunchageun.runtime.AppGraph
 import com.mirae.chageunchageun.ui.common.DrivingGate
 import com.mirae.chageunchageun.ui.common.label
@@ -26,7 +26,7 @@ import com.mirae.chageunchageun.ui.theme.AppColors
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun HomeScreen(graph: AppGraph) {
-    val vm: HomeViewModel = viewModel { HomeViewModel(graph.drivingSignals, graph.driveRuntime) }
+    val vm: HomeViewModel = viewModel { HomeViewModel(graph.driveState, graph.controls, graph.driveRuntime) }
     val ui by vm.ui.collectAsStateWithLifecycle()
 
     Column(
@@ -42,8 +42,7 @@ fun HomeScreen(graph: AppGraph) {
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             InfoCard("기어", ui.gear?.name ?: "-", ui.gearSource.label())
-            InfoCard("속도", ui.speedKmh?.let { "$it km/h" } ?: "-", "")
-            TurnSignalCard(ui)
+            HighBeamCard(ui)
         }
         // 상세 영역 예시: 주행 중에는 DrivingGate가 대신 짧은 안내를 보여 줍니다.
         DrivingGate(graph.driveRuntime) {
@@ -72,14 +71,12 @@ private fun InfoCard(title: String, value: String, source: String, highlight: Bo
 }
 
 @Composable
-private fun TurnSignalCard(ui: HomeUi) {
-    val text = when (ui.turnSignal) {
-        TurnSignal.LEFT -> "◀ 왼쪽"
-        TurnSignal.RIGHT -> "오른쪽 ▶"
-        TurnSignal.HAZARD -> "비상등"
-        TurnSignal.OFF -> "꺼짐"
+private fun HighBeamCard(ui: HomeUi) {
+    val text = when (ui.highBeam) {
+        LampState.ON -> "켜짐"
+        LampState.DAYTIME_RUNNING -> "주간주행등"
+        LampState.OFF -> "꺼짐"
         null -> "-"
     }
-    val on = ui.turnSignal != null && ui.turnSignal != TurnSignal.OFF
-    InfoCard("방향지시등", text, ui.turnSignalSource.label(), highlight = on)
+    InfoCard("상향등", text, ui.highBeamSource.label(), highlight = ui.highBeam == LampState.ON)
 }

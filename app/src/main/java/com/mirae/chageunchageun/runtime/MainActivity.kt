@@ -18,24 +18,31 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import com.mirae.chageunchageun.BuildConfig
 import com.mirae.chageunchageun.demo.DebugPanel
+import com.mirae.chageunchageun.demo.SignalCheckScreen
 import com.mirae.chageunchageun.feature.home.HomeScreen
+import com.mirae.chageunchageun.feature.mirror.MirrorScreen
 import com.mirae.chageunchageun.feature.onboarding.OnboardingScreen
 import com.mirae.chageunchageun.feature.parking.ParkingScreen
-import com.mirae.chageunchageun.feature.report.ReportScreen
-import com.mirae.chageunchageun.feature.seat.SeatScreen
+import com.mirae.chageunchageun.feature.practice.PracticeScreen
+import com.mirae.chageunchageun.feature.toll.TollScreen
 import com.mirae.chageunchageun.feature.voice.VoiceScreen
 import com.mirae.chageunchageun.feature.warning.WarningScreen
 import com.mirae.chageunchageun.ui.theme.AppTheme
 
-/** 앱의 화면 목록. 새 화면은 여기에 한 줄 추가합니다(PR 리뷰). */
+/**
+ * 앱의 화면 목록. PRD 구현 범위(11월 10일 결정)를 따릅니다. 새 화면은 여기에 한 줄 추가합니다(PR 리뷰).
+ * - 필수: A3, B1, C1 / 시간이 되면: A5, B2 / SDK 승인 후: E2
+ */
 enum class AppScreen(val label: String, val debugOnly: Boolean = false) {
     HOME("홈"),
-    ONBOARDING("A4"),
-    SEAT("A1 시트"),
+    ONBOARDING("첫 실행"),
+    MIRROR("A3 미러"),
     PARKING("B1 주차"),
     WARNING("C1 경고"),
-    REPORT("D1 회고"),
+    PRACTICE("A5 연습"),
+    TOLL("B2 톨게이트"),
     VOICE("E2 음성"),
+    SIGNALS("신호 점검", debugOnly = true),
     DEBUG("디버그", debugOnly = true),
 }
 
@@ -68,11 +75,13 @@ fun AppRoot(graph: AppGraph) {
                 when (current) {
                     AppScreen.HOME -> HomeScreen(graph)
                     AppScreen.ONBOARDING -> OnboardingScreen(graph)
-                    AppScreen.SEAT -> SeatScreen(graph)
+                    AppScreen.MIRROR -> MirrorScreen(graph)
                     AppScreen.PARKING -> ParkingScreen(graph)
                     AppScreen.WARNING -> WarningScreen(graph)
-                    AppScreen.REPORT -> ReportScreen(graph)
+                    AppScreen.PRACTICE -> PracticeScreen(graph)
+                    AppScreen.TOLL -> TollScreen(graph)
                     AppScreen.VOICE -> VoiceScreen(graph)
+                    AppScreen.SIGNALS -> SignalCheckScreen(graph)
                     AppScreen.DEBUG -> DebugPanel(graph)
                 }
             }

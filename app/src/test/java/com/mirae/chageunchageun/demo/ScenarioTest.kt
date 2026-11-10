@@ -2,7 +2,8 @@ package com.mirae.chageunchageun.demo
 
 import com.mirae.chageunchageun.core.model.DrivePhase
 import com.mirae.chageunchageun.core.model.Gear
-import com.mirae.chageunchageun.core.model.TurnSignal
+import com.mirae.chageunchageun.core.model.Lamp
+import com.mirae.chageunchageun.core.model.LampState
 import com.mirae.chageunchageun.core.model.WarningType
 import com.mirae.chageunchageun.feature.home.HomeViewModel
 import com.mirae.chageunchageun.runtime.DriveRuntime
@@ -46,7 +47,8 @@ class ScenarioTest {
         advanceTimeBy(2_500)
         assertEquals(Gear.D, bus.gear.value)
         advanceTimeBy(4_000) // 6.5초
-        assertEquals(TurnSignal.LEFT, bus.turnSignal.value)
+        assertEquals(LampState.ON, bus.lamps.value[Lamp.HIGH_BEAM])
+        assertEquals(LampState.OFF, bus.lamps.value[Lamp.LOW_BEAM])
         advanceTimeBy(7_000) // 13.5초
         assertEquals(setOf(WarningType.TIRE_PRESSURE), bus.warnings.value)
         advanceUntilIdle()
@@ -57,13 +59,13 @@ class ScenarioTest {
     @Test
     fun `예시 기능 - 가짜 포트로 홈 상태가 만들어진다`() = runTest {
         val bus = FakeVehicleBus()
-        val signals = FakeDrivingSignals(bus)
-        val runtime = DriveRuntime(signals, backgroundScope)
-        val vm = HomeViewModel(signals, runtime)
+        val driveState = FakeDriveStateSource(bus)
+        val runtime = DriveRuntime(driveState, backgroundScope)
+        val vm = HomeViewModel(driveState, FakeControlsSource(bus), runtime)
 
         bus.gear.value = Gear.D
-        bus.turnSignal.value = TurnSignal.RIGHT
-        val ui = vm.ui.first { it.turnSignal == TurnSignal.RIGHT && it.gear == Gear.D }
+        bus.setLamp(Lamp.HIGH_BEAM, LampState.ON)
+        val ui = vm.ui.first { it.highBeam == LampState.ON && it.gear == Gear.D }
         assertEquals(DrivePhase.DRIVING, ui.phase)
     }
 }

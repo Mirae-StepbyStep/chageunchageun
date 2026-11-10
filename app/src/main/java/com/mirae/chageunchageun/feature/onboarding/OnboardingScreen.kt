@@ -8,7 +8,7 @@ import com.mirae.chageunchageun.ui.common.PlaceholderScreen
 @Composable
 fun OnboardingScreen(graph: AppGraph) {
     PlaceholderScreen(
-        title = "A4 첫 실행 설정",
+        title = "첫 실행 설정 (위치 동의, 어드바이저 레벨)",
         owner = "후",
         ports = "없음 (앱 내부 설정, data/)",
     )

@@ -8,16 +8,16 @@
 - Android Studio(JDK 17 이상, 번들 JBR 21 사용 가능)로 열고 `app`을 실행합니다.
 - 명령줄: `./gradlew :app:assembleDebug :app:testDebugUnitTest`
 - 대상: Pleos Connect AVD(Android 14). 일반 에뮬레이터에도 adb로 설치는 됩니다.
-- 왼쪽 메뉴 **디버그**에서 기어·방향지시등·경고 등을 바꾸거나 `basic_drive` 시나리오를 재생합니다.
+- 왼쪽 메뉴 **디버그**에서 기어·등화·와이퍼·경고 등을 바꾸거나 `basic_drive` 시나리오를 재생합니다.
 
 ## 구조
 
 ```text
 core/model     공용 데이터 타입 (Signal, Gear, SituationEvent ...)        ← 리뷰 필수
-core/port      바깥 세계를 보는 인터페이스 7개                             ← 리뷰 필수
-platform/      실제 구현. Pleos SDK(ai.pleos.*)·AAOS(android.car.*)는 여기서만 import
+core/port      바깥 세계를 보는 인터페이스 8개 (포트당 파일 하나)                            ← 리뷰 필수
+platform/      실제 구현(vehicle, car, nav, speech). Pleos SDK(ai.pleos.*)·AAOS(android.car.*)는 여기서만 import
 demo/          가짜 구현(FakeVehicleBus), 시나리오 재생, 디버그 패널
-runtime/       AppGraph(조립), DriveRuntime(주행 상태·상황 이벤트), MainActivity ← 리뷰 필수
+runtime/       AppGraph(조립), PortModes(실제·가짜 전환), DriveRuntime(주행 상태·상황 이벤트), MainActivity ← 리뷰 필수
 domain/        판단 로직. 순수 Kotlin, JVM 테스트
 data/          Room DB, 설정
 feature/       화면 + ViewModel
@@ -26,18 +26,20 @@ ui/            테마(PRD 5색), DrivingGate 등 공용 Composable
 
 | 포트 | 쓰는 기능 | 담당 |
 |---|---|---|
-| `DrivingSignals` (기어, 속도, 브레이크, 방향지시등, 조향각, 주행 규제) | D1, 주행 판단 | 후(어댑터) |
+| `DriveStateSource` (기어, 주행 규제) | 주행 판단(`DriveRuntime`) | 후 |
+| `ControlsSource` (등화, 앞 와이퍼, 브레이크 페달) | A5 | 후 |
+| `SteeringSource` (조향각) | B1 | 민서 |
 | `WarningSource` | C1 | 재균 |
-| `SeatController` | A1 | 후 |
 | `VehicleSpecSource`, `LocationSource` | B1 | 민서 |
 | `SpeechOutput`, `SpeechInput` | C1, B1, E2 | E2 담당 |
 
 | 폴더 | 담당 |
 |---|---|
-| `feature/onboarding`, `feature/seat`, `domain/drive`, `platform/vehicle` | 후 |
+| `feature/onboarding`, `feature/mirror`(A3), `feature/practice`(A5), `domain/drive`, `platform/vehicle`, `platform/car` | 후 |
 | `feature/parking`, `platform/nav` | 민서 |
+| `feature/toll`(B2) | 후(주행 전 미리 보기), 민서(주행 중 안내) |
+| 비즈니스, 시연 시나리오(`assets/scenarios`) 등 | 수현 |
 | `feature/warning`, `domain/guidance` | 재균 |
-| `feature/report`, `domain/trip`, `data/` | 수현 |
 | `feature/voice`, `platform/speech` | E2 담당 |
 
 ## 규칙
@@ -50,7 +52,7 @@ ui/            테마(PRD 5색), DrivingGate 등 공용 Composable
 
 ## 새 기능 만드는 순서
 
-`feature/home`(방향지시등 예시)을 따라 합니다.
+`feature/home`(상향등 예시)을 따라 합니다.
 
 1. `XxxViewModel(포트들)`을 만들고 포트 Flow를 `combine`해 `XxxUi` 상태를 만듭니다.
 2. `XxxScreen(graph)`에서 `viewModel { XxxViewModel(graph.포트) }`로 만들고 상태를 그립니다.
@@ -70,8 +72,29 @@ ui/            테마(PRD 5색), DrivingGate 등 공용 Composable
 
 `gradle/libs.versions.toml`에서만 관리합니다. Pleos Vehicle SDK Sample App 기준(AGP 8.8.2, Kotlin 2.0, compileSdk/targetSdk 35)에 가깝게 맞췄고, 개발 PC에 platform 35가 없어 AGP 8.13.0, compileSdk 36을 씁니다. targetSdk는 35입니다.
 
-## 다음 단계 (v1, 11/10)
+## 실제 어댑터 붙이기
 
-- `platform/vehicle`: 기어, 브레이크, 방향지시등, 조향각, 경고 실제 어댑터와 Pleos 권한 선언
-- `platform/car`: CarUxRestrictions, PERF_VEHICLE_SPEED
-- `AppGraph`: 포트별 실제·가짜 전환
+포트마다 실제 구현(`platform/`)과 가짜 구현(`demo/`)이 둘 다 `AppGraph`에 연결돼 있습니다. 기본은 모두 가짜이고, **디버그 → 포트 연결**에서 포트별로 실제로 바꿉니다. 실제 값을 못 받아도 가짜로 자동 대체하지 않습니다.
+
+| 포트 | 어댑터 파일 | 담당 |
+|---|---|---|
+| `DriveStateSource` | `platform/car/CarDriveStateSource.kt` | 후 |
+| `ControlsSource` | `platform/vehicle/PleosControlsSource.kt` | 후 |
+| `SteeringSource` | `platform/vehicle/PleosSteeringSource.kt` | 민서 |
+| `WarningSource` | `platform/vehicle/PleosWarningSource.kt` | 재균 |
+| `VehicleSpecSource` | `platform/car/CarVehicleSpecSource.kt` | 민서 |
+| `LocationSource` | `platform/nav/PleosLocationSource.kt` | 민서 |
+| `SpeechOutput`, `SpeechInput` | `platform/speech/PleosSpeechOutput.kt`, `PleosSpeechInput.kt` | E2 담당 |
+
+1. 자기 어댑터 파일의 본문만 채웁니다. 본보기는 `CarDriveStateSource`이고, 나머지는 `Unavailable("adapter not implemented")`를 내보냅니다.
+   "현재 값 조회 + 구독"은 `platform/SignalFlow.kt`의 `signalFlow`에 조회·등록·해제만 넘기면 됩니다(사용 예시는 그 파일 주석).
+2. 생성자와 `AppGraph`는 바꾸지 않습니다. 그래야 브랜치를 합칠 때 충돌이 없습니다.
+3. 실패(`onFailed`, 미지원, 권한 없음)는 사유를 담은 `Signal.Unavailable`로 내보냅니다.
+4. 권한은 `AndroidManifest.xml`에 어댑터별 묶음으로 미리 선언돼 있습니다. 더 필요하면 자기 묶음 안에만 추가합니다.
+5. 값이 들어오는지는 **신호 점검** 메뉴에서 봅니다. 포트별 최신 값, 출처, 못 받은 사유가 한 줄씩 나옵니다.
+
+## 다음 단계
+
+- 나머지 어댑터 7개 구현(각 담당)
+- "미확인"으로 적은 권한(FusedLocation, NaviHelper, TTS, STT) 이름 확인
+- 주행 규제(`CarUxRestrictions`) 값이 콘솔 조작으로 바뀌는지 시험

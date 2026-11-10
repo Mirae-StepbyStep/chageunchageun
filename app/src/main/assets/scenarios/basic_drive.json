@@ -1,16 +1,15 @@
 {
-  "name": "기본 주행: 출발 → 좌회전 → 공기압 경고 → 도착 → 주차",
+  "name": "기본 주행: 출발 → 상향등 → 좌회전 → 공기압 경고 → 도착 → 주차",
   "steps": [
-    { "atMs": 0,     "note": "주차 상태", "gear": "P", "speedMps": 0, "uxRestricted": false },
+    { "atMs": 0,     "note": "주차 상태", "gear": "P", "uxRestricted": false },
     { "atMs": 2000,  "note": "출발", "gear": "D", "uxRestricted": true },
-    { "atMs": 3000,  "speedMps": 8.3 },
-    { "atMs": 6000,  "note": "좌회전 전 깜빡이", "turnSignal": "LEFT" },
-    { "atMs": 8000,  "steeringAngleDeg": -90 },
-    { "atMs": 10000, "turnSignal": "OFF", "steeringAngleDeg": 0 },
+    { "atMs": 6000,  "note": "상향등 켬", "lamps": { "HIGH_BEAM": "ON" } },
+    { "atMs": 8000,  "note": "좌회전", "steeringAngleDeg": -90 },
+    { "atMs": 10000, "note": "상향등 끔", "lamps": { "HIGH_BEAM": "OFF" }, "steeringAngleDeg": 0 },
     { "atMs": 13000, "note": "공기압 경고", "warnings": ["TIRE_PRESSURE"] },
-    { "atMs": 18000, "note": "급감속", "brakePressed": true, "speedMps": 2.0 },
+    { "atMs": 18000, "note": "감속", "brakePressed": true },
     { "atMs": 19000, "brakePressed": false },
-    { "atMs": 21000, "note": "목적지 주차장 도착", "arrivedAt": "시연 주차장", "speedMps": 1.0 },
-    { "atMs": 24000, "note": "주차 완료", "speedMps": 0, "gear": "P", "uxRestricted": false }
+    { "atMs": 21000, "note": "목적지 주차장 도착", "arrivedAt": "시연 주차장" },
+    { "atMs": 24000, "note": "주차 완료", "gear": "P", "uxRestricted": false }
   ]
 }
