@@ -13,13 +13,13 @@ import com.mirae.chageunchageun.demo.FakeDrivingSignals
 import com.mirae.chageunchageun.demo.FakeLocationSource
 import com.mirae.chageunchageun.demo.FakeSeatController
 import com.mirae.chageunchageun.demo.FakeSpeechInput
-import com.mirae.chageunchageun.demo.FakeSpeechOutput
 import com.mirae.chageunchageun.demo.FakeVehicleBus
 import com.mirae.chageunchageun.demo.FakeVehicleSpecSource
 import com.mirae.chageunchageun.demo.FakeWarningSource
 import com.mirae.chageunchageun.demo.Scenario
 import com.mirae.chageunchageun.demo.ScenarioParser
 import com.mirae.chageunchageun.demo.ScenarioPlayer
+import com.mirae.chageunchageun.platform.AndroidTtsSpeechOutput
 import kotlinx.coroutines.CoroutineScope
 
 /**
@@ -42,7 +42,10 @@ class AppGraph(private val context: Context, val appScope: CoroutineScope) {
     val seatController: SeatController = FakeSeatController(fakeBus, seatPlant)
     val vehicleSpec: VehicleSpecSource = FakeVehicleSpecSource(fakeBus)
     val locationSource: LocationSource = FakeLocationSource(fakeBus)
-    val speechOutput: SpeechOutput = FakeSpeechOutput(fakeBus)
+
+    // 음성 출력만 실제 소리가 나는 구현입니다. 말한 문장은 가짜 버스에도 계속 기록합니다.
+    val speechOutput: SpeechOutput =
+        AndroidTtsSpeechOutput(context, onSpoken = fakeBus::recordSpoken)
     val speechInput: SpeechInput = FakeSpeechInput(fakeBus)
 
     // 앱 공용 런타임

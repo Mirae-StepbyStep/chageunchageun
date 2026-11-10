@@ -61,6 +61,9 @@ dependencies {
     // Pleos Vehicle SDK. import는 platform/vehicle 에서만 합니다.
     implementation(libs.pleos.vehicle)
 
+    // Pleos TextToSpeech SDK.
+    implementation("ai.pleos.playground:TextToSpeech:3.3.1")
+
     testImplementation(libs.junit)
     testImplementation(libs.kotlinx.coroutines.test)
     androidTestImplementation(libs.androidx.junit)
