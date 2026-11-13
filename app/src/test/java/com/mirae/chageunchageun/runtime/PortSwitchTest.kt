@@ -66,4 +66,14 @@ class PortSwitchTest {
         modes.setAll(PortMode.FAKE)
         assertEquals(PortMode.FAKE, modes.get(PortId.WARNING))
     }
+
+    @Test
+    fun `구현된 포트만 실제로 시작하고 나머지는 가짜로 시작한다`() {
+        val modes = PortModes(real = CONNECTED_PORTS)
+        assertEquals(PortMode.REAL, modes.get(PortId.CONTROLS))
+        assertEquals(PortMode.REAL, modes.get(PortId.DRIVE_STATE))
+        assertEquals(PortMode.REAL, modes.get(PortId.STEERING))
+        assertEquals(PortMode.FAKE, modes.get(PortId.LOCATION))
+        assertEquals(PortMode.FAKE, PortModes().get(PortId.CONTROLS))
+    }
 }

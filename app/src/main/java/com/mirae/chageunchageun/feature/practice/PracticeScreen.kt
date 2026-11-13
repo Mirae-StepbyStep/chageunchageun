@@ -62,7 +62,7 @@ import com.mirae.chageunchageun.ui.theme.AppColors
 fun PracticeScreen(graph: AppGraph) {
     val vm: PracticeViewModel = viewModel { PracticeViewModel(graph.controls, graph.steering) }
     val ui by vm.ui.collectAsStateWithLifecycle()
-    // 도로 주행 게임을 하는 중인지. 조작부 익히기(목록·단계 연습)와 화면을 나눕니다.
+    // 모의 운전을 하는 중인지. 조작부 익히기(목록·단계 연습)와 화면을 나눕니다.
     var inGame by rememberSaveable { mutableStateOf(false) }
 
     CarScale {
@@ -88,7 +88,7 @@ private fun Header(ui: PracticeUi, vm: PracticeViewModel) {
     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Text("정차 중 조작 연습", style = MaterialTheme.typography.displaySmall, fontWeight = FontWeight.Bold)
-            Text("하나씩 익힌 뒤 주행 게임에서 써 보세요.", style = MaterialTheme.typography.titleLarge)
+            Text("하나씩 익힌 뒤 모의 운전에서 써 보세요.", style = MaterialTheme.typography.titleLarge)
         }
         LevelToggle(ui.level, vm::setLevel)
     }
@@ -154,7 +154,7 @@ private fun PracticeList(ui: PracticeUi, vm: PracticeViewModel, onStartGame: () 
                 GuideOutlinedButton(if (ui.completed.isEmpty()) "연습 시작" else "이어서 연습", vm::openNext)
                 Spacer(Modifier.size(16.dp))
             }
-            GuideButton("주행 게임", onStartGame)
+            GuideButton("모의 운전", onStartGame)
         }
     }
 }

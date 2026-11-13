@@ -38,7 +38,7 @@ import kotlinx.coroutines.launch
 
 /**
  * 앱의 조립 지점(수동 DI). 포트마다 실제 구현(platform/)과 가짜 구현(demo/)을 둘 다 만들어 두고,
- * [portModes]에 따라 하나를 내보냅니다. 기본은 모두 가짜이며 디버그 패널에서 포트별로 바꿉니다.
+ * [portModes]에 따라 하나를 내보냅니다. 어댑터가 구현된 포트([CONNECTED_PORTS])는 실제로 시작하고, 디버그 패널에서 포트별로 바꿉니다.
  *
  * 어댑터를 구현할 때는 platform/의 자기 파일 본문만 채웁니다. 이 파일은 바꾸지 않아도 됩니다.
  * 이 파일을 바꾸려면 PR 리뷰를 받습니다.
@@ -54,7 +54,7 @@ class AppGraph(private val context: Context, val appScope: CoroutineScope) {
     val carSession = CarSession(context)
 
     /** 포트별 실제·가짜 선택. */
-    val portModes = PortModes()
+    val portModes = PortModes(real = CONNECTED_PORTS)
 
     // 포트
     val driveState: DriveStateSource = SwitchingDriveStateSource(
