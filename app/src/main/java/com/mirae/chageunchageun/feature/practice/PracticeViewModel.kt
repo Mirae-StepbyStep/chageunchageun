@@ -71,7 +71,7 @@ class PracticeViewModel(
         }
     }
 
-    /** 차량 값을 못 받을 때 "직접 확인했어요", 또는 건너뛸 수 있는 단계의 "건너뛰기". */
+    /** 차량 값을 못 받을 때 "직접 확인함", 또는 건너뛸 수 있는 단계의 "건너뛰기". */
     fun confirmManually() = _ui.update { ui ->
         val session = ui.session ?: return@update ui
         ui.withSession(PracticeGuide.confirmManually(session))

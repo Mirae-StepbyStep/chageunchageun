@@ -24,7 +24,7 @@ class PracticeGuideTest {
         val session = PracticeGuide.start(PracticeItem.WIPER).read(off, on)
         assertFalse(session.isDone)
         assertEquals(PracticeTarget.OFF, session.current?.target)
-        assertEquals("와이퍼가 움직여요.", session.lastConfirmed?.confirmed)
+        assertEquals("와이퍼가 켜졌습니다.", session.lastConfirmed?.confirmed)
     }
 
     @Test
@@ -35,6 +35,12 @@ class PracticeGuideTest {
         assertEquals(PracticeTarget.OFF, started.current?.target)
 
         assertTrue(started.read(off, on, off).isDone)
+    }
+
+    @Test
+    fun `브레이크를 밟은 채 시작하면 발을 떼라고 안내한다`() {
+        val started = PracticeGuide.start(PracticeItem.BRAKE).read(on)
+        assertEquals("브레이크를 밟고 있습니다. 먼저 발을 떼주세요.", started.current?.instruction)
     }
 
     @Test

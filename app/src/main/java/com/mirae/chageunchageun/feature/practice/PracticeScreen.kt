@@ -21,6 +21,9 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -59,16 +62,22 @@ import com.mirae.chageunchageun.ui.theme.AppColors
 fun PracticeScreen(graph: AppGraph) {
     val vm: PracticeViewModel = viewModel { PracticeViewModel(graph.controls, graph.steering) }
     val ui by vm.ui.collectAsStateWithLifecycle()
+    // 도로 주행 게임을 하는 중인지. 조작부 익히기(목록·단계 연습)와 화면을 나눕니다.
+    var inGame by rememberSaveable { mutableStateOf(false) }
 
     CarScale {
         Column(
             Modifier.fillMaxSize().padding(horizontal = 40.dp, vertical = 28.dp),
             verticalArrangement = Arrangement.spacedBy(20.dp),
         ) {
-            Header(ui, vm)
+            if (!inGame) Header(ui, vm)
             DrivingGate(graph.driveRuntime) {
                 val session = ui.session
-                if (session == null) PracticeList(ui, vm) else PracticeRun(ui, session, vm)
+                when {
+                    inGame -> PracticeGameScreen(graph, onExit = { inGame = false })
+                    session == null -> PracticeList(ui, vm, onStartGame = { inGame = true })
+                    else -> PracticeRun(ui, session, vm)
+                }
             }
         }
     }
@@ -79,7 +88,7 @@ private fun Header(ui: PracticeUi, vm: PracticeViewModel) {
     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Text("정차 중 조작 연습", style = MaterialTheme.typography.displaySmall, fontWeight = FontWeight.Bold)
-            Text("직접 조작해 보면 차가 확인해 드려요.", style = MaterialTheme.typography.titleLarge)
+            Text("하나씩 익힌 뒤 주행 게임에서 써 보세요.", style = MaterialTheme.typography.titleLarge)
         }
         LevelToggle(ui.level, vm::setLevel)
     }
@@ -114,7 +123,7 @@ private fun LevelToggle(level: AdvisorLevel, onSelect: (AdvisorLevel) -> Unit) {
 // ── 연습 목록 ─────────────────────────────────────────────
 
 @Composable
-private fun PracticeList(ui: PracticeUi, vm: PracticeViewModel) {
+private fun PracticeList(ui: PracticeUi, vm: PracticeViewModel, onStartGame: () -> Unit) {
     val items = PracticeGuide.items
     Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(20.dp)) {
         Row(
@@ -138,13 +147,14 @@ private fun PracticeList(ui: PracticeUi, vm: PracticeViewModel) {
                 style = MaterialTheme.typography.headlineSmall,
             )
             if (ui.completed.isNotEmpty()) {
-                GuideOutlinedButton("처음부터 다시", vm::resetAll)
+                GuideOutlinedButton("기록 지우기", vm::resetAll)
                 Spacer(Modifier.size(16.dp))
             }
-            val next = ui.nextItem
-            if (next != null) {
-                GuideButton(if (ui.completed.isEmpty()) "순서대로 시작" else "이어서 연습", vm::openNext)
+            if (ui.nextItem != null) {
+                GuideOutlinedButton(if (ui.completed.isEmpty()) "연습 시작" else "이어서 연습", vm::openNext)
+                Spacer(Modifier.size(16.dp))
             }
+            GuideButton("주행 게임", onStartGame)
         }
     }
 }
@@ -196,14 +206,14 @@ private fun PracticeRun(ui: PracticeUi, session: PracticeSession, vm: PracticeVi
             val stage = session.current
             if (stage == null) {
                 Text("연습 완료!", style = MaterialTheme.typography.displayMedium, fontWeight = FontWeight.Bold)
-                Text("${session.item.title} 조작을 직접 해 봤어요.", style = MaterialTheme.typography.headlineMedium)
+                Text("${session.item.title} 조작을 직접 해 봤습니다.", style = MaterialTheme.typography.headlineMedium)
             } else {
                 Text(stage.instruction.keepWords(), style = MaterialTheme.typography.displaySmall, fontWeight = FontWeight.Bold)
                 session.lastConfirmed?.let { Confirmed(it.confirmed) }
-                if (ui.level == AdvisorLevel.DETAILED) Tips(session.item)
+                Tips(session.item, showWhere = ui.level == AdvisorLevel.DETAILED)
                 if (ui.reading == PracticeReading.None) {
                     Text(
-                        "이 차에서는 자동으로 확인하지 못해요. 직접 해 본 뒤 눌러주세요.".keepWords(),
+                        "지금은 자동으로 확인할 수 없습니다. 직접 해 본 뒤 눌러주세요.".keepWords(),
                         style = MaterialTheme.typography.titleLarge,
                     )
                 }
@@ -223,7 +233,7 @@ private fun Confirmed(text: String) {
 }
 
 @Composable
-private fun Tips(item: PracticeItem) {
+private fun Tips(item: PracticeItem, showWhere: Boolean) {
     Column(
         Modifier
             .fillMaxWidth()
@@ -232,7 +242,8 @@ private fun Tips(item: PracticeItem) {
             .padding(20.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        Text("위치  ${item.where}".keepWords(), style = MaterialTheme.typography.titleLarge)
+        // 위치 설명은 "자세히"에서만, 주의 문장은 안전과 관련돼 항상 보여 줍니다.
+        if (showWhere) Text("위치  ${item.where}".keepWords(), style = MaterialTheme.typography.titleLarge)
         Text("주의  ${item.caution}".keepWords(), style = MaterialTheme.typography.titleLarge)
     }
 }
@@ -244,8 +255,8 @@ private fun RunButtons(ui: PracticeUi, session: PracticeSession, vm: PracticeVie
         val stage = session.current
         when {
             stage == null && ui.nextItem != null -> GuideButton("다음 연습", vm::openNext, Modifier.weight(1f))
-            stage == null -> GuideButton("모두 완료", vm::backToList, Modifier.weight(1f))
-            ui.reading == PracticeReading.None -> GuideButton("직접 확인했어요", vm::confirmManually, Modifier.weight(1f))
+            stage == null -> GuideButton("연습 마치기", vm::backToList, Modifier.weight(1f))
+            ui.reading == PracticeReading.None -> GuideButton("직접 확인함", vm::confirmManually, Modifier.weight(1f))
             stage.skippable -> GuideButton("건너뛰기", vm::confirmManually, Modifier.weight(1f))
         }
     }
@@ -277,17 +288,15 @@ private fun StatePanel(ui: PracticeUi, session: PracticeSession, modifier: Modif
 }
 
 private fun stateText(item: PracticeItem, reading: PracticeReading): String = when (reading) {
-    is PracticeReading.Switch -> when (item) {
-        PracticeItem.BRAKE -> if (reading.on) "밟음" else "뗌"
-        PracticeItem.WIPER -> if (reading.on) "움직임" else "멈춤"
-        else -> if (reading.on) "켜짐" else "꺼짐"
-    }
+    // 켜고 끄는 조작부는 레버에 적힌 대로 ON / OFF로 통일합니다.
+    is PracticeReading.Switch -> if (reading.on) "ON" else "OFF"
     is PracticeReading.Angle -> when {
-        reading.deg <= -PracticeGuide.CENTER_DEG -> "왼쪽 ${(-reading.deg).toInt()}°"
-        reading.deg >= PracticeGuide.CENTER_DEG -> "오른쪽 ${reading.deg.toInt()}°"
+        reading.deg <= -PracticeGuide.CENTER_DEG -> "◀ 왼쪽 ${(-reading.deg).toInt()}°"
+        reading.deg >= PracticeGuide.CENTER_DEG -> "오른쪽 ${reading.deg.toInt()}° ▶"
         else -> "가운데"
     }
-    PracticeReading.None -> "값 없음"
+    // 못 받은 값은 OFF와 구분합니다.
+    PracticeReading.None -> "확인 불가"
 }
 
 // ── 그림 ────────────────────────────────────────────────
