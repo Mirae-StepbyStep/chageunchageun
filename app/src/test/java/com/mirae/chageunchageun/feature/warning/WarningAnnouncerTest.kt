@@ -20,6 +20,7 @@ import com.mirae.chageunchageun.domain.guidance.WarningGuidance
 import com.mirae.chageunchageun.runtime.DriveRuntime
 import java.io.File
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.launch
@@ -216,5 +217,64 @@ class WarningAnnouncerTest {
         emit(value(WarningType.ESC_OFF))
 
         assertTrue(speech.spoken.isEmpty())
+    }
+
+    /** 실제 음성처럼 문장이 끝날 때까지 돌아오지 않습니다. stop()이나 취소로 끝납니다. */
+    private class SlowSpeech : SpeechOutput {
+        val started = mutableListOf<String>()
+        val cancelled = mutableListOf<String>()
+        var stops = 0
+
+        override suspend fun speak(text: String, priority: SpeechPriority) {
+            started += text
+            try {
+                awaitCancellation()
+            } finally {
+                cancelled += text
+            }
+        }
+
+        override fun stop() {
+            stops++
+        }
+    }
+
+    private fun TestScope.startSlow(slow: SlowSpeech) {
+        val runtime = DriveRuntime(FakeDriveStateSource(FakeVehicleBus()), backgroundScope)
+        backgroundScope.launch { WarningAnnouncer(source, slow, runtime).run() }
+        runCurrent()
+    }
+
+    @Test
+    fun `말하는 중에 경고가 꺼지면 음성을 멈춘다`() = runTest {
+        val slow = SlowSpeech()
+        startSlow(slow)
+        emit(value(WarningType.TIRE_PRESSURE))
+        assertEquals(listOf(sentence(WarningType.TIRE_PRESSURE)), slow.started)
+        assertEquals(0, slow.stops)
+
+        emit(value())
+        assertEquals(1, slow.stops)
+        assertEquals(listOf(sentence(WarningType.TIRE_PRESSURE)), slow.cancelled)
+    }
+
+    @Test
+    fun `꺼진 경고의 문장만 멈추고 다른 경고의 문장은 그대로 둔다`() = runTest {
+        val slow = SlowSpeech()
+        startSlow(slow)
+        emit(value(WarningType.TIRE_PRESSURE, WarningType.ABS))
+        emit(value(WarningType.ABS))
+
+        assertEquals(listOf(sentence(WarningType.TIRE_PRESSURE)), slow.cancelled)
+        assertEquals(0, slow.stops)
+    }
+
+    @Test
+    fun `다 말한 뒤에 경고가 꺼지면 stop을 부르지 않는다`() = runTest {
+        start()
+        emit(value(WarningType.TIRE_PRESSURE))
+        emit(value())
+
+        assertEquals(1, speech.spoken.size)
     }
 }

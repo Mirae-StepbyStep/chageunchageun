@@ -4,6 +4,10 @@ import com.mirae.chageunchageun.MainDispatcherRule
 import com.mirae.chageunchageun.core.model.DrivePhase
 import com.mirae.chageunchageun.core.model.Signal
 import com.mirae.chageunchageun.core.model.Source
+import com.mirae.chageunchageun.core.model.SpeechPriority
+import com.mirae.chageunchageun.core.port.SpeechOutput
+import com.mirae.chageunchageun.domain.guidance.WarningGuidance
+import kotlinx.coroutines.CompletableDeferred
 import com.mirae.chageunchageun.core.model.WarningType
 import com.mirae.chageunchageun.core.port.WarningSource
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -70,5 +74,40 @@ class WarningViewModelTest {
             listOf(WarningType.TIRE_PRESSURE, WarningType.PARKING_BRAKE),
             vm.ui.first { it.guides.size == 2 }.guides.map { it.type },
         )
+    }
+
+    private class SlowSpeech : SpeechOutput {
+        val spoken = mutableListOf<Pair<String, SpeechPriority>>()
+        val done = CompletableDeferred<Unit>()
+
+        override suspend fun speak(text: String, priority: SpeechPriority) {
+            spoken += text to priority
+            done.await()
+        }
+
+        override fun stop() = Unit
+    }
+
+    @Test
+    fun `다시 듣기는 경고 문장을 한 번 말하고 말하는 중에는 또 말하지 않는다`() = runTest {
+        val speech = SlowSpeech()
+        val vm = WarningViewModel(source, speech = speech)
+        val guide = WarningGuidance.guide(WarningType.TIRE_PRESSURE)
+
+        vm.listenAgain(guide)
+        vm.listenAgain(guide)
+        assertEquals(listOf(WarningGuidance.speech(guide)!! to SpeechPriority.NORMAL), speech.spoken)
+
+        speech.done.complete(Unit)
+        vm.listenAgain(guide)
+        assertEquals(2, speech.spoken.size)
+    }
+
+    @Test
+    fun `정보 경고는 다시 들을 문장이 없다`() = runTest {
+        val speech = SlowSpeech()
+        WarningViewModel(source, speech = speech).listenAgain(WarningGuidance.guide(WarningType.ESC_OFF))
+
+        assertTrue(speech.spoken.isEmpty())
     }
 }
