@@ -125,7 +125,7 @@ private fun StepPanel(ui: MirrorUi, vm: MirrorViewModel, onDone: () -> Unit, mod
                 // 앱은 거울이 맞았는지 알 수 없어, 거울 단계에서는 운전자가 직접 확인하고 넘어갑니다.
                 text = when {
                     ui.isLast -> "홈으로"
-                    ui.animated -> "맞췄습니다"
+                    ui.animated -> "확인했습니다"
                     else -> "다음"
                 },
                 onClick = if (ui.isLast) onDone else vm::next,

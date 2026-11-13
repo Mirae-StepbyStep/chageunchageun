@@ -2,7 +2,7 @@ package com.mirae.chageunchageun.domain.practice
 
 import kotlin.math.abs
 
-/** 도로 주행 게임에서 만나는 상황. */
+/** 모의 운전에서 만나는 상황. */
 enum class GameEventType(val title: String) {
     OBSTACLE("공사 구간"),
     STOP_SIGNAL("정지 신호"),
@@ -56,7 +56,7 @@ data class GameState(
 }
 
 /**
- * A5 도로 주행 게임의 규칙. 차는 일정 속도로 스스로 달리고, 운전자는 실제 조작부로 상황에 대응합니다.
+ * A5 모의 운전의 규칙. 차는 일정 속도로 스스로 달리고, 운전자는 실제 조작부로 상황에 대응합니다.
  * 가속 페달은 읽을 수 없어 쓰지 않습니다. 순수 함수라 JVM 테스트로 확인합니다.
  */
 object DriveGame {

@@ -23,4 +23,12 @@ class ControlsMappingTest {
         assertEquals(WiperState.OTHER, wiperStateFromPleos(PleosWiperState.OTHER))
         assertEquals(WiperState.OTHER, wiperStateFromPleos(PleosWiperState.SERVICE))
     }
+
+    @Test
+    fun `조향각은 SDK 값의 부호를 뒤집어 콘솔과 맞춘다`() {
+        assertEquals(-161f, angleFromSdk(161f))
+        assertEquals(90f, angleFromSdk(-90f))
+        assertEquals(0f, angleFromSdk(0f))
+        assertEquals(null, angleFromSdk(null))
+    }
 }

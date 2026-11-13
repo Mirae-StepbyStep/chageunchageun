@@ -58,7 +58,7 @@ import kotlin.math.ceil
 import kotlin.math.sin
 
 /**
- * A5 도로 주행 게임 화면(초안). 내 차를 뒤에서 본 시점(TPS)으로 도로를 그립니다.
+ * A5 모의 운전 화면(초안). 내 차를 뒤에서 본 시점(TPS)으로 도로를 그립니다.
  * 3D 엔진 없이 Canvas에 원근만 계산해 그립니다. 부르는 쪽에서 DrivingGate와 CarScale로 감쌉니다.
  */
 @Composable
@@ -255,8 +255,15 @@ private fun StartCard(input: GameInput, onStart: () -> Unit, onExit: () -> Unit,
         modifier.width(680.dp).clip(RoundedCornerShape(28.dp)).background(AppColors.White).padding(28.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
-        Text("주행 게임", fontSize = 36.sp, fontWeight = FontWeight.Bold, color = AppColors.Black)
-        Text("화면 속 차는 스스로 달립니다. 상황에 맞게 실제 레버와 페달을 써 보세요.", fontSize = 22.sp, color = AppColors.Black)
+        Text(
+            "모의 운전",
+            Modifier.fillMaxWidth(),
+            fontSize = 36.sp,
+            fontWeight = FontWeight.Bold,
+            color = AppColors.Black,
+            textAlign = TextAlign.Center,
+        )
+        Text("화면 속 차는 스스로 달립니다. 상황에 맞게 실제 레버와 페달을 써 보세요.".keepWords(), fontSize = 22.sp, color = AppColors.Black)
         listOf(
             "기어는 P에 둡니다. 변속 레버와 가속 페달은 건드리지 않습니다.",
             "두 손은 핸들에, 오른발은 브레이크 위에 올려주세요.",

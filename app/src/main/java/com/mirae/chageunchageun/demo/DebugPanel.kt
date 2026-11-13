@@ -29,6 +29,7 @@ import com.mirae.chageunchageun.core.model.LampState
 import com.mirae.chageunchageun.core.model.WarningType
 import com.mirae.chageunchageun.core.model.WiperState
 import com.mirae.chageunchageun.runtime.AppGraph
+import com.mirae.chageunchageun.runtime.CONNECTED_PORTS
 import com.mirae.chageunchageun.runtime.PortId
 import com.mirae.chageunchageun.runtime.PortMode
 import kotlinx.coroutines.Job
@@ -75,13 +76,16 @@ fun DebugPanel(graph: AppGraph) {
         FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             OutlinedButton(onClick = { graph.portModes.setAll(PortMode.REAL) }) { Text("모두 실제") }
             OutlinedButton(onClick = { graph.portModes.setAll(PortMode.FAKE) }) { Text("모두 가짜") }
+            OutlinedButton(onClick = {
+                PortId.entries.forEach { graph.portModes.set(it, if (it in CONNECTED_PORTS) PortMode.REAL else PortMode.FAKE) }
+            }) { Text("처음 상태로") }
             // C1 시연(Virtual Console)에 필요한 세 포트만 실제로 바꿉니다. 앱을 다시 켜면 모두 가짜로 돌아갑니다.
             OutlinedButton(onClick = {
                 listOf(PortId.WARNING, PortId.DRIVE_STATE, PortId.SPEECH_OUT).forEach { graph.portModes.set(it, PortMode.REAL) }
             }) { Text("C1 시연 준비") }
         }
 
-        Text("가짜 차량 (아래 값은 모두 시연 신호)", style = MaterialTheme.typography.titleMedium)
+        Text("가짜 차량 (아래 값은 모두 시연 신호, 가짜로 둔 포트에만 반영됩니다)", style = MaterialTheme.typography.titleMedium)
 
         Text("기어")
         FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
