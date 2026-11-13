@@ -27,29 +27,29 @@ enum class PracticeItem(
 ) {
     LOW_BEAM(
         title = "전조등",
-        where = "핸들 왼쪽 레버 끝에 있는 다이얼입니다.",
-        caution = "AUTO 위치에서는 어두우면 저절로 켜져요. 꺼지지 않아도 정상입니다.",
+        where = "핸들 왼쪽 레버 끝을 돌리는 스위치입니다.",
+        caution = "AUTO에서는 어두우면 저절로 켜집니다. 꺼지지 않아도 정상입니다.",
         stages = listOf(
-            PracticeStage(PracticeTarget.ON, "레버 끝 다이얼을 전조등 위치로 돌려주세요.", "전조등이 켜졌어요."),
-            PracticeStage(PracticeTarget.OFF, "다이얼을 원래 위치로 되돌려주세요.", "전조등이 꺼졌어요.", skippable = true),
+            PracticeStage(PracticeTarget.ON, "레버 끝을 전조등 표시까지 돌려주세요.", "전조등이 켜졌습니다."),
+            PracticeStage(PracticeTarget.OFF, "레버 끝을 원래 위치(AUTO 또는 OFF)로 되돌려주세요.", "전조등이 꺼졌습니다.", skippable = true),
         ),
     ),
     HIGH_BEAM(
         title = "상향등",
-        where = "핸들 왼쪽 레버를 앞뒤로 움직여 조작합니다. 전조등이 켜져 있어야 유지됩니다.",
+        where = "핸들 왼쪽 레버를 앞뒤로 움직입니다. 전조등을 먼저 켜야 합니다.",
         caution = "앞에 사람이나 차가 있으면 연습하지 않습니다.",
         stages = listOf(
-            PracticeStage(PracticeTarget.ON, "왼쪽 레버를 계기판 쪽으로 밀어주세요.", "상향등이 켜졌어요."),
-            PracticeStage(PracticeTarget.OFF, "레버를 몸 쪽으로 당겨 되돌려주세요.", "상향등이 꺼졌어요."),
+            PracticeStage(PracticeTarget.ON, "전조등을 켠 채, 왼쪽 레버를 계기판 쪽으로 밀어주세요.", "상향등이 켜졌습니다."),
+            PracticeStage(PracticeTarget.OFF, "레버를 제자리까지만 당겨주세요.", "상향등이 꺼졌습니다."),
         ),
     ),
     WIPER(
         title = "와이퍼",
-        where = "핸들 오른쪽 레버입니다.",
+        where = "핸들 오른쪽, 와이퍼 그림이 있는 레버입니다.",
         caution = "마른 유리에서는 짧게만 켭니다.",
         stages = listOf(
-            PracticeStage(PracticeTarget.ON, "오른쪽 레버를 아래로 내려주세요.", "와이퍼가 움직여요."),
-            PracticeStage(PracticeTarget.OFF, "레버를 OFF 위치로 올려주세요.", "와이퍼가 멈췄어요."),
+            PracticeStage(PracticeTarget.ON, "와이퍼 레버를 LO 위치에 맞춰주세요.", "와이퍼가 켜졌습니다."),
+            PracticeStage(PracticeTarget.OFF, "레버를 OFF로 되돌려주세요.", "와이퍼가 꺼졌습니다."),
         ),
     ),
     BRAKE(
@@ -57,18 +57,18 @@ enum class PracticeItem(
         where = "두 페달 중 왼쪽에 있는 넓은 페달입니다. 오른발로 밟습니다.",
         caution = "기어가 P인지 먼저 확인합니다.",
         stages = listOf(
-            PracticeStage(PracticeTarget.ON, "오른발로 브레이크 페달을 밟아주세요.", "브레이크를 밟았어요."),
-            PracticeStage(PracticeTarget.OFF, "발을 천천히 떼주세요.", "브레이크에서 발을 뗐어요."),
+            PracticeStage(PracticeTarget.ON, "오른발로 브레이크를 밟아주세요.", "브레이크를 밟았습니다."),
+            PracticeStage(PracticeTarget.OFF, "발을 천천히 떼주세요.", "발을 뗐습니다."),
         ),
     ),
     STEERING(
         title = "핸들",
         where = "양손으로 9시와 3시 위치를 잡습니다.",
-        caution = "주변에 사람이 없는지 확인하고 돌립니다.",
+        caution = "바퀴가 실제로 움직입니다. 차 주변에 사람이 없는지 확인합니다.",
         stages = listOf(
-            PracticeStage(PracticeTarget.LEFT, "핸들을 왼쪽으로 돌려주세요.", "왼쪽으로 돌렸어요."),
-            PracticeStage(PracticeTarget.RIGHT, "이번에는 오른쪽으로 돌려주세요.", "오른쪽으로 돌렸어요."),
-            PracticeStage(PracticeTarget.CENTER, "핸들을 가운데로 되돌려주세요.", "가운데로 돌아왔어요."),
+            PracticeStage(PracticeTarget.LEFT, "핸들을 왼쪽으로 조금 돌려주세요.", "왼쪽으로 돌렸습니다."),
+            PracticeStage(PracticeTarget.RIGHT, "이번에는 오른쪽으로 조금 돌려주세요.", "오른쪽으로 돌렸습니다."),
+            PracticeStage(PracticeTarget.CENTER, "핸들을 가운데로 되돌려주세요.", "가운데로 돌아왔습니다."),
         ),
     ),
     ;
@@ -116,7 +116,12 @@ object PracticeGuide {
     /** 이 각도(도) 안이면 가운데로 봅니다. */
     const val CENTER_DEG = 5f
 
-    private val turnOffFirst = PracticeStage(PracticeTarget.OFF, "이미 켜져 있어요. 먼저 꺼주세요.", "꺼졌어요. 이제 시작합니다.")
+    /** 시작할 때 이미 켜져(밟혀) 있으면 앞에 붙이는 단계. 브레이크는 "켜다/끄다"가 맞지 않아 문구를 따로 둡니다. */
+    private fun turnOffFirst(item: PracticeItem) = PracticeStage(
+        PracticeTarget.OFF,
+        if (item == PracticeItem.BRAKE) "브레이크를 밟고 있습니다. 먼저 발을 떼주세요." else "이미 켜져 있습니다. 먼저 꺼주세요.",
+        "좋습니다. 이제 시작합니다.",
+    )
 
     fun start(item: PracticeItem): PracticeSession = PracticeSession(item)
 
@@ -141,7 +146,7 @@ object PracticeGuide {
         var s = session
         if (!s.primed) {
             val alreadyOn = s.index == 0 && s.item.isSwitch && reading == PracticeReading.Switch(on = true)
-            s = s.copy(primed = true, stages = if (alreadyOn) listOf(turnOffFirst) + s.stages else s.stages)
+            s = s.copy(primed = true, stages = if (alreadyOn) listOf(turnOffFirst(s.item)) + s.stages else s.stages)
             // 이미 켜진 상태에서 시작하면 그 값으로 첫 "켜기"를 통과시키지 않습니다.
             if (alreadyOn) return s
         }
