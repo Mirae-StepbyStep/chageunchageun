@@ -9,7 +9,7 @@ import com.mirae.chageunchageun.core.model.SpeechPriority
 import com.mirae.chageunchageun.core.model.WarningType
 import com.mirae.chageunchageun.core.port.SpeechOutput
 import com.mirae.chageunchageun.core.port.WarningSource
-import com.mirae.chageunchageun.demo.FakeDrivingSignals
+import com.mirae.chageunchageun.demo.FakeDriveStateSource
 import com.mirae.chageunchageun.demo.FakeSpeechOutput
 import com.mirae.chageunchageun.demo.FakeVehicleBus
 import com.mirae.chageunchageun.demo.FakeWarningSource
@@ -64,7 +64,7 @@ class WarningAnnouncerTest {
     }
 
     private fun TestScope.start() {
-        val runtime = DriveRuntime(FakeDrivingSignals(FakeVehicleBus()), backgroundScope)
+        val runtime = DriveRuntime(FakeDriveStateSource(FakeVehicleBus()), backgroundScope)
         // events 는 재생(replay)이 없으므로 알리기 전에 구독합니다.
         backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { runtime.events.toList(events) }
         backgroundScope.launch { WarningAnnouncer(source, speech, runtime).run() }
@@ -151,7 +151,7 @@ class WarningAnnouncerTest {
     @Test
     fun `c1 시나리오는 공기압과 브레이크액만 말한다`() = runTest {
         val bus = FakeVehicleBus()
-        val runtime = DriveRuntime(FakeDrivingSignals(bus), backgroundScope)
+        val runtime = DriveRuntime(FakeDriveStateSource(bus), backgroundScope)
         backgroundScope.launch {
             WarningAnnouncer(FakeWarningSource(bus), FakeSpeechOutput(bus), runtime).run()
         }
