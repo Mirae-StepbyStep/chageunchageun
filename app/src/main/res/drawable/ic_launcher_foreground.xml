@@ -1,30 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 차근차근 앱 아이콘(전경): 한 칸씩 오르는 둥근 계단 위 자동차. 108dp 중 가운데 안전 영역(지름 66) 안에 그립니다. -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:aapt="http://schemas.android.com/aapt"
     android:width="108dp"
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
-    <path android:pathData="M31,63.928c0,0 6.4,-11 12.1,-13.1c7.2,-2.6 26,-1.4 26,-1.4l38.1,38.1L107,108.928l-32,-1L31,63.928z">
-        <aapt:attr name="android:fillColor">
-            <gradient
-                android:endX="85.84757"
-                android:endY="92.4963"
-                android:startX="42.9492"
-                android:startY="49.59793"
-                android:type="linear">
-                <item
-                    android:color="#44000000"
-                    android:offset="0.0" />
-                <item
-                    android:color="#00000000"
-                    android:offset="1.0" />
-            </gradient>
-        </aapt:attr>
-    </path>
+    <!-- step1 -->
     <path
-        android:fillColor="#FFFFFF"
-        android:fillType="nonZero"
-        android:pathData="M65.3,45.828l3.8,-6.6c0.2,-0.4 0.1,-0.9 -0.3,-1.1c-0.4,-0.2 -0.9,-0.1 -1.1,0.3l-3.9,6.7c-6.3,-2.8 -13.4,-2.8 -19.7,0l-3.9,-6.7c-0.2,-0.4 -0.7,-0.5 -1.1,-0.3C38.8,38.328 38.7,38.828 38.9,39.228l3.8,6.6C36.2,49.428 31.7,56.028 31,63.928h46C76.3,56.028 71.8,49.428 65.3,45.828zM43.4,57.328c-0.8,0 -1.5,-0.5 -1.8,-1.2c-0.3,-0.7 -0.1,-1.5 0.4,-2.1c0.5,-0.5 1.4,-0.7 2.1,-0.4c0.7,0.3 1.2,1 1.2,1.8C45.3,56.528 44.5,57.328 43.4,57.328L43.4,57.328zM64.6,57.328c-0.8,0 -1.5,-0.5 -1.8,-1.2s-0.1,-1.5 0.4,-2.1c0.5,-0.5 1.4,-0.7 2.1,-0.4c0.7,0.3 1.2,1 1.2,1.8C66.5,56.528 65.6,57.328 64.6,57.328L64.6,57.328z"
-        android:strokeWidth="1"
-        android:strokeColor="#00000000" />
+        android:fillColor="#FF8799B0"
+        android:pathData="M30.96,64.24H41.2A4.48,4.48 0,0 1,45.68,68.72V73.84A4.48,4.48 0,0 1,41.2,78.32H30.96A4.48,4.48 0,0 1,26.48,73.84V68.72A4.48,4.48 0,0 1,30.96,64.24Z" />
+    <!-- step2 -->
+    <path
+        android:fillColor="#FF4A688B"
+        android:pathData="M46.32,56.56H56.56A4.48,4.48 0,0 1,61.04,61.04V73.84A4.48,4.48 0,0 1,56.56,78.32H46.32A4.48,4.48 0,0 1,41.84,73.84V61.04A4.48,4.48 0,0 1,46.32,56.56Z" />
+    <!-- step3 -->
+    <path
+        android:fillColor="#FF002C5F"
+        android:pathData="M61.68,48.88H75.76A4.48,4.48 0,0 1,80.24,53.36V73.84A4.48,4.48 0,0 1,75.76,78.32H61.68A4.48,4.48 0,0 1,57.2,73.84V53.36A4.48,4.48 0,0 1,61.68,48.88Z" />
+    <!-- body -->
+    <path
+        android:fillColor="#FF1D9E75"
+        android:pathData="M60.4,36.08H77.04A4.48,4.48 0,0 1,81.52,40.56V41.2A4.48,4.48 0,0 1,77.04,45.68H60.4A4.48,4.48 0,0 1,55.92,41.2V40.56A4.48,4.48 0,0 1,60.4,36.08Z" />
+    <!-- roof -->
+    <path
+        android:fillColor="#FF1D9E75"
+        android:pathData="M64.24,29.68H71.92A3.84,3.84 0,0 1,75.76,33.52V34.8A3.84,3.84 0,0 1,71.92,38.64H64.24A3.84,3.84 0,0 1,60.4,34.8V33.52A3.84,3.84 0,0 1,64.24,29.68Z" />
+    <!-- window -->
+    <path
+        android:fillColor="#FFF6F3F2"
+        android:pathData="M64.56,31.6H71.6A1.6,1.6 0,0 1,73.2,33.2V34.48A1.6,1.6 0,0 1,71.6,36.08H64.56A1.6,1.6 0,0 1,62.96,34.48V33.2A1.6,1.6 0,0 1,64.56,31.6Z" />
+    <!-- wheelRear -->
+    <path
+        android:fillColor="#FF04342C"
+        android:pathData="M59.12,46.32A3.2,3.2 0,1 1,65.52,46.32A3.2,3.2 0,1 1,59.12,46.32Z" />
+    <!-- wheelFront -->
+    <path
+        android:fillColor="#FF04342C"
+        android:pathData="M71.92,46.32A3.2,3.2 0,1 1,78.32,46.32A3.2,3.2 0,1 1,71.92,46.32Z" />
 </vector>
