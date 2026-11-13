@@ -36,10 +36,10 @@ import com.mirae.chageunchageun.ui.theme.AppTheme
 enum class AppScreen(val label: String, val debugOnly: Boolean = false) {
     HOME("홈"),
     ONBOARDING("첫 실행"),
-    MIRROR("A3 미러"),
+    MIRROR("미러 맞추기"),
     PARKING("B1 주차"),
     WARNING("C1 경고"),
-    PRACTICE("A5 연습"),
+    PRACTICE("조작 연습"),
     TOLL("B2 톨게이트"),
     VOICE("E2 음성"),
     SIGNALS("신호 점검", debugOnly = true),
@@ -75,7 +75,7 @@ fun AppRoot(graph: AppGraph) {
                 when (current) {
                     AppScreen.HOME -> HomeScreen(graph)
                     AppScreen.ONBOARDING -> OnboardingScreen(graph)
-                    AppScreen.MIRROR -> MirrorScreen(graph)
+                    AppScreen.MIRROR -> MirrorScreen(graph, onDone = { current = AppScreen.HOME })
                     AppScreen.PARKING -> ParkingScreen(graph)
                     AppScreen.WARNING -> WarningScreen(graph)
                     AppScreen.PRACTICE -> PracticeScreen(graph)

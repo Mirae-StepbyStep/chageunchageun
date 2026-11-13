@@ -1,12 +1,25 @@
 package com.mirae.chageunchageun.domain.mirror
 
 /** A3 미러 조절 안내의 단계. 순서가 곧 안내 순서입니다. */
-enum class MirrorStep(val title: String, val body: String) {
+enum class MirrorStep(
+    val title: String,
+    val body: String,
+    /** 실제 거울을 어떻게 움직이는지. 스위치 위치는 차종마다 달라 일반적인 설명만 둡니다. */
+    val howTo: String = "",
+) {
     POSTURE("자세 먼저", "평소 운전 자세로 앉은 뒤에 미러를 맞춥니다."),
-    ROOM("룸미러", "뒷유리 전체가 거울 가운데에 오게 맞춰주세요."),
-    LEFT("왼쪽 사이드미러", "운전석 쪽 뒷문 손잡이가 거울 모서리에 살짝 걸치게 맞춰주세요."),
-    RIGHT("오른쪽 사이드미러", "조수석 쪽 뒷문 손잡이가 거울 모서리에 보이게 맞춰주세요."),
-    DONE("세팅 완료!", "이제 출발해도 좋습니다."),
+    ROOM("룸미러", "뒷유리 전체가 거울 가운데에 오게 맞춰주세요.", "거울을 손으로 잡고 움직입니다."),
+    LEFT(
+        "왼쪽 사이드미러",
+        "운전석 쪽 뒷문 손잡이가 거울 모서리에 살짝 걸치게 맞춰주세요.",
+        "운전석 문 쪽 미러 스위치에서 L을 고르고 방향 버튼을 누릅니다.",
+    ),
+    RIGHT(
+        "오른쪽 사이드미러",
+        "조수석 쪽 뒷문 손잡이가 거울 모서리에 살짝 걸치게 맞춰주세요.",
+        "운전석 문 쪽 미러 스위치에서 R을 고르고 방향 버튼을 누릅니다.",
+    ),
+    DONE("세팅 완료!", "미러 준비가 끝났습니다."),
 }
 
 /**
@@ -44,6 +57,23 @@ object MirrorGuide {
         }
     }
 
-    const val HOLD_START = 0.15f
-    const val MOVE_END = 0.6f
+    /**
+     * 한 바퀴의 처음과 끝에서 그림을 잠깐 흐리게 해, 맞은 상태에서 어긋난 상태로 뚝 끊겨 보이지 않게 합니다.
+     * 돌려주는 값은 그림의 불투명도(0~1)입니다.
+     */
+    fun fade(progress: Float): Float {
+        val p = progress.coerceIn(0f, 1f)
+        return when {
+            p < FADE -> p / FADE
+            p > 1f - FADE -> (1f - p) / FADE
+            else -> 1f
+        }
+    }
+
+    /** 한 바퀴의 길이(ms): 어긋남 약 1초, 맞추기 약 2초, 맞은 상태 약 3초. */
+    const val LOOP_MS = 6_000
+
+    const val HOLD_START = 0.17f
+    const val MOVE_END = 0.5f
+    const val FADE = 0.05f
 }
