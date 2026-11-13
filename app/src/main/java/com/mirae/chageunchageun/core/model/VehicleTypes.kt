@@ -11,7 +11,10 @@ enum class LampState { OFF, ON, DAYTIME_RUNNING }
 enum class WiperState { OFF, ON, OTHER }
 
 /** C1이 다루는 경고. 실제 신호 매핑은 platform 어댑터가 정합니다. */
-enum class WarningType { TIRE_PRESSURE, ENGINE, BRAKE_FLUID, ENGINE_OIL, SEAT_BELT, AIRBAG, WASHER_FLUID }
+enum class WarningType {
+    TIRE_PRESSURE, ENGINE, BRAKE_FLUID, ENGINE_OIL, SEAT_BELT, AIRBAG, WASHER_FLUID,
+    PARKING_BRAKE, STEERING_ASSIST, ABS, ESC, ESC_OFF, EV_SYSTEM, POWER_DOWN, LOW_VOLT_BATTERY,
+}
 
 data class CarSize(val lengthMm: Int, val widthMm: Int, val heightMm: Int)
 

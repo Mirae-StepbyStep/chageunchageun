@@ -1,6 +1,7 @@
 package com.mirae.chageunchageun.feature.warning
 
 import com.mirae.chageunchageun.MainDispatcherRule
+import com.mirae.chageunchageun.core.model.DrivePhase
 import com.mirae.chageunchageun.core.model.Signal
 import com.mirae.chageunchageun.core.model.Source
 import com.mirae.chageunchageun.core.model.WarningType
@@ -54,5 +55,20 @@ class WarningViewModelTest {
         val ui = vm.ui.first()
         assertFalse(ui.available)
         assertTrue(ui.guides.isEmpty())
+    }
+
+    @Test
+    fun `주차 브레이크 경고는 주차 중에는 화면에서 뺀다`() = runTest {
+        val phase = MutableStateFlow(DrivePhase.PARKED)
+        val vm = WarningViewModel(source, phase)
+        warnings.value = Signal.Value(setOf(WarningType.PARKING_BRAKE, WarningType.TIRE_PRESSURE), Source.SCRIPTED)
+
+        assertEquals(listOf(WarningType.TIRE_PRESSURE), vm.ui.first { it.guides.isNotEmpty() }.guides.map { it.type })
+
+        phase.value = DrivePhase.DRIVING
+        assertEquals(
+            listOf(WarningType.TIRE_PRESSURE, WarningType.PARKING_BRAKE),
+            vm.ui.first { it.guides.size == 2 }.guides.map { it.type },
+        )
     }
 }

@@ -11,6 +11,7 @@ import com.mirae.chageunchageun.domain.guidance.WarningGuide
 import com.mirae.chageunchageun.domain.guidance.WarningGuidance
 import com.mirae.chageunchageun.runtime.DriveRuntime
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.flow.combine
 
 /**
  * 새로 켜진 경고를 알립니다. 화면이 닫혀 있어도 말해야 하므로 화면 상태와 분리합니다.
@@ -24,11 +25,12 @@ class WarningAnnouncer(
     suspend fun run() {
         var known = emptySet<WarningType>()
         // ponytail: 순서대로 말하므로 위험 경고도 재생 중인 주의 문장이 끝난 뒤 나옵니다. 끊어야 하면 실제 TTS 어댑터와 함께 바꿉니다.
-        warnings.activeWarnings.collect { signal ->
+        warnings.activeWarnings.combine(runtime.phase, ::Pair).collect { (signal, phase) ->
             // 값을 못 받은 것은 해제가 아닙니다.
             if (signal !is Signal.Value) return@collect
-            val added = WarningGuidance.ordered(signal.value - known)
-            known = signal.value
+            val active = WarningGuidance.relevant(signal.value, phase)
+            val added = WarningGuidance.ordered(active - known)
+            known = active
             added.forEach { announce(it, signal.source) }
         }
     }

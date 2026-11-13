@@ -1,5 +1,6 @@
 package com.mirae.chageunchageun.domain.guidance
 
+import com.mirae.chageunchageun.core.model.DrivePhase
 import com.mirae.chageunchageun.core.model.Severity
 import com.mirae.chageunchageun.core.model.WarningType
 import org.junit.Assert.assertEquals
@@ -75,5 +76,51 @@ class WarningGuidanceTest {
             listOf(WarningType.BRAKE_FLUID, WarningType.TIRE_PRESSURE, WarningType.WASHER_FLUID),
             ordered.map { it.type },
         )
+    }
+
+    private fun texts(guide: WarningGuide): List<String> =
+        listOf(guide.title, guide.meaning, guide.driveAction) + guide.parkedSteps + listOfNotNull(WarningGuidance.speech(guide))
+
+    @Test
+    fun `급정지는 말리는 문장에만 나오고 급제동 지시 표현은 없다`() {
+        val suddenStopAsInstruction = Regex("급정지(?!하지 말)")
+        all.flatMap(::texts).forEach { text ->
+            assertFalse(text, suddenStopAsInstruction.containsMatchIn(text))
+            listOf("급브레이크", "즉시 정차", "바로 멈추").forEach { word -> assertFalse("$word: $text", word in text) }
+        }
+    }
+
+    @Test
+    fun `공기압 문구에는 압력 수치가 없다`() {
+        val pressureNumber = Regex("\\d\\s*(kPa|psi|bar)", RegexOption.IGNORE_CASE)
+        texts(WarningGuidance.guide(WarningType.TIRE_PRESSURE)).forEach { assertFalse(it, pressureNumber.containsMatchIn(it)) }
+    }
+
+    @Test
+    fun `공기압 조치에 바람이 빠졌으면 긴급출동이 있다`() {
+        val steps = WarningGuidance.guide(WarningType.TIRE_PRESSURE).parkedSteps
+        assertTrue(steps.any { "긴급출동" in it && "운전하지 말고" in it })
+    }
+
+    @Test
+    fun `새 경고의 심각도`() {
+        val expected = mapOf(
+            WarningType.PARKING_BRAKE to Severity.CAUTION,
+            WarningType.STEERING_ASSIST to Severity.DANGER,
+            WarningType.ABS to Severity.CAUTION,
+            WarningType.ESC to Severity.CAUTION,
+            WarningType.ESC_OFF to Severity.INFO,
+            WarningType.EV_SYSTEM to Severity.DANGER,
+            WarningType.POWER_DOWN to Severity.CAUTION,
+            WarningType.LOW_VOLT_BATTERY to Severity.CAUTION,
+        )
+        expected.forEach { (type, severity) -> assertEquals(type.name, severity, WarningGuidance.guide(type).severity) }
+    }
+
+    @Test
+    fun `주차 브레이크 경고는 주차 중에만 뺀다`() {
+        val types = setOf(WarningType.PARKING_BRAKE, WarningType.TIRE_PRESSURE)
+        assertEquals(setOf(WarningType.TIRE_PRESSURE), WarningGuidance.relevant(types, DrivePhase.PARKED))
+        assertEquals(types, WarningGuidance.relevant(types, DrivePhase.DRIVING))
     }
 }

@@ -1,6 +1,7 @@
 package com.mirae.chageunchageun.feature.warning
 
 import com.mirae.chageunchageun.MainDispatcherRule
+import com.mirae.chageunchageun.core.model.Gear
 import com.mirae.chageunchageun.core.model.Severity
 import com.mirae.chageunchageun.core.model.Signal
 import com.mirae.chageunchageun.core.model.SituationEvent
@@ -176,5 +177,44 @@ class WarningAnnouncerTest {
 
         emit(value(WarningType.TIRE_PRESSURE, WarningType.BRAKE_FLUID))
         assertEquals(listOf(sentence(WarningType.BRAKE_FLUID)), speech.spoken.map { it.first })
+    }
+
+    private fun TestScope.startWithBus(bus: FakeVehicleBus) {
+        val runtime = DriveRuntime(FakeDriveStateSource(bus), backgroundScope)
+        backgroundScope.launch { WarningAnnouncer(source, speech, runtime).run() }
+        runCurrent()
+    }
+
+    @Test
+    fun `주차 브레이크 경고는 P에서는 말하지 않고 D로 바꾸면 한 번 말한다`() = runTest {
+        val bus = FakeVehicleBus()
+        startWithBus(bus)
+        emit(value(WarningType.PARKING_BRAKE))
+        assertTrue(speech.spoken.isEmpty())
+
+        bus.gear.value = Gear.D
+        runCurrent()
+        assertEquals(listOf(sentence(WarningType.PARKING_BRAKE)), speech.spoken.map { it.first })
+
+        bus.uxRestricted.value = true
+        runCurrent()
+        assertEquals(1, speech.spoken.size)
+    }
+
+    @Test
+    fun `주차 브레이크 경고는 D에서 켜지면 바로 말한다`() = runTest {
+        val bus = FakeVehicleBus().apply { gear.value = Gear.D }
+        startWithBus(bus)
+        emit(value(WarningType.PARKING_BRAKE))
+
+        assertEquals(listOf(sentence(WarningType.PARKING_BRAKE)), speech.spoken.map { it.first })
+    }
+
+    @Test
+    fun `ESC 꺼짐은 정보라서 말하지 않는다`() = runTest {
+        start()
+        emit(value(WarningType.ESC_OFF))
+
+        assertTrue(speech.spoken.isEmpty())
     }
 }

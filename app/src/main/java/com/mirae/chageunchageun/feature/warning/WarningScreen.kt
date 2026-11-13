@@ -51,7 +51,7 @@ private val LabelSize = 22.sp
 /** C1 경고 안내 화면. 주행 중에는 가장 심각한 경고 하나만 크게, 정차 후에는 조치까지 보여 줍니다. */
 @Composable
 fun WarningScreen(graph: AppGraph) {
-    val vm: WarningViewModel = viewModel { WarningViewModel(graph.warningSource) }
+    val vm: WarningViewModel = viewModel { WarningViewModel(graph.warningSource, graph.driveRuntime.phase) }
     val ui by vm.ui.collectAsStateWithLifecycle()
     // DrivingGate와 같은 기준입니다. 정차 중에는 아래 상세 카드와 겹치므로 요약 배너를 숨깁니다.
     val canShowDetail by graph.driveRuntime.canShowDetail.collectAsStateWithLifecycle()
