@@ -1,0 +1,13 @@
+{
+  "name": "C1 경고: 주행 중 공기압 → 브레이크액 → 정차 후 조치",
+  "steps": [
+    { "atMs": 0,     "note": "주차 상태, 경고 초기화", "gear": "P", "speedMps": 0, "uxRestricted": false, "warnings": [] },
+    { "atMs": 2000,  "note": "출발", "gear": "D", "uxRestricted": true },
+    { "atMs": 3000,  "speedMps": 13.9 },
+    { "atMs": 6000,  "note": "주의: 공기압 경고", "warnings": ["TIRE_PRESSURE"] },
+    { "atMs": 14000, "note": "위험: 브레이크액 경고", "warnings": ["TIRE_PRESSURE", "BRAKE_FLUID"] },
+    { "atMs": 18000, "note": "정보: 워셔액 (음성 없음)", "warnings": ["TIRE_PRESSURE", "BRAKE_FLUID", "WASHER_FLUID"] },
+    { "atMs": 22000, "note": "감속", "speedMps": 2.0 },
+    { "atMs": 25000, "note": "주차 완료", "speedMps": 0, "gear": "P", "uxRestricted": false }
+  ]
+}

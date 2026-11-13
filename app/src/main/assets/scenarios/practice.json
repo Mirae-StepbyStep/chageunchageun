@@ -1,0 +1,17 @@
+{
+  "name": "A5 조작 연습: 전조등 → 상향등 → 와이퍼 → 브레이크 → 핸들",
+  "steps": [
+    { "atMs": 0,     "note": "정차", "gear": "P", "uxRestricted": false },
+    { "atMs": 3000,  "note": "전조등 켬", "lamps": { "LOW_BEAM": "ON" } },
+    { "atMs": 6000,  "note": "전조등 끔", "lamps": { "LOW_BEAM": "OFF" } },
+    { "atMs": 10000, "note": "상향등 켬", "lamps": { "HIGH_BEAM": "ON" } },
+    { "atMs": 13000, "note": "상향등 끔", "lamps": { "HIGH_BEAM": "OFF" } },
+    { "atMs": 17000, "note": "와이퍼 켬", "frontWiper": "ON" },
+    { "atMs": 20000, "note": "와이퍼 끔", "frontWiper": "OFF" },
+    { "atMs": 24000, "note": "브레이크 밟음", "brakePressed": true },
+    { "atMs": 27000, "note": "브레이크 뗌", "brakePressed": false },
+    { "atMs": 31000, "note": "핸들 왼쪽", "steeringAngleDeg": -90 },
+    { "atMs": 34000, "note": "핸들 오른쪽", "steeringAngleDeg": 90 },
+    { "atMs": 37000, "note": "핸들 가운데", "steeringAngleDeg": 0 }
+  ]
+}

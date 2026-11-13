@@ -93,6 +93,60 @@ ui/            테마(PRD 5색), DrivingGate 등 공용 Composable
 4. 권한은 `AndroidManifest.xml`에 어댑터별 묶음으로 미리 선언돼 있습니다. 더 필요하면 자기 묶음 안에만 추가합니다.
 5. 값이 들어오는지는 **신호 점검** 메뉴에서 봅니다. 포트별 최신 값, 출처, 못 받은 사유가 한 줄씩 나옵니다.
 
+## C1 차량 경고 안내
+
+담당: 재균. 자세한 기록은 `docs/c1/`에 있습니다(시험 결과 `01-probe-results.md`, 시연 순서 `02-demo-script.md`).
+
+**하는 일**
+
+- 차량 경고등이 켜지면 의미·심각도·조치를 한국어 음성으로 먼저 알립니다. 어떤 화면이 열려 있어도 말합니다.
+- 주행 중에는 심각도 색 카드 한 장만 보여 주고(스크롤·애니메이션·터치 없음), 정차하면 **C1 경고** 화면으로 자동 전환해 조치 단계와 "다시 듣기"를 보여 줍니다.
+- 심각도는 위험(빨강)·주의(주황)·정보(파랑)이며 색과 함께 기호·글자로 표시합니다. 정보는 음성과 주행 중 카드가 없습니다.
+- 어떤 경고에서도 급정지를 지시하지 않습니다. 공기압 수치는 표시하지 않습니다.
+
+**신호 경로**
+
+| 값 | 경로 | 구분 |
+|---|---|---|
+| 경고등 | Pleos Vehicle SDK 2.3.2 `registerTelltales` → `platform/vehicle/PleosWarningSource.kt` | 실제 신호 |
+| 기어, 주행 규제 | AAOS Car API → `platform/car/CarDriveStateSource.kt` | 실제 신호 |
+| 음성 | Pleos TextToSpeech SDK 3.3.1, ON_DEVICE 모드, `Locale.KOREA` → `platform/speech/PleosSpeechOutput.kt` | 실제 출력 |
+| 브레이크액, 워셔액, 엔진, 엔진오일, 안전벨트 경고 | 디버그 패널의 가짜 차량 | 시연용 신호 |
+
+콘솔로 켤 수 있는 경고는 타이어 공기압, 주차 브레이크, 조향 보조, ABS, ESC, ESC 꺼짐, 전기차 시스템, 출력 제한, 12V 배터리, 에어백입니다. 브레이크액·워셔액은 콘솔에 경고등이 없어 디버그 패널로만 보여 주고, 안전벨트·엔진·엔진오일 압력 경고등은 일부러 연결하지 않았습니다.
+
+**실행 환경**
+
+- Pleos Connect 에뮬레이터 v2.1.0 (Android 14, `pleos_car_emulator` arm64-v8a)
+- 화면: 2560 × 1440, 160 dpi, 가로 (AVD 설정과 `adb shell wm size`·`wm density`로 확인)
+- 실제 차량은 쓰지 않습니다. 차량 값은 에뮬레이터의 Pleos Connect Virtual Console이 만듭니다.
+
+**권한** (모두 `AndroidManifest.xml`에 선언, 에뮬레이터에서 부여 확인)
+
+| 권한 | 쓰는 곳 |
+|---|---|
+| `pleos.car.permission.PRIVATE_CAR_SAFETY` | `registerTelltales` |
+| `pleos.car.permission.CAR_SAFETY` | `getTelltalesInfo` |
+| `pleos.car.permission.TTS_SERVICE` | Pleos TextToSpeech |
+| `android.car.permission.CAR_POWERTRAIN` | 기어 (후의 어댑터) |
+
+TextToSpeech SDK가 자기 매니페스트로 `android.permission.INTERNET`을 함께 넣습니다. ON_DEVICE 모드는 네트워크와 앱 등록 없이 동작합니다.
+
+**공기압 경고 시연 (Virtual Console, 약 30초)**
+
+1. `adb forward tcp:8088 tcp:8088` 후 브라우저에서 `http://127.0.0.1:8088`을 열어 둡니다.
+2. 앱의 **디버그** 메뉴에서 **C1 시연 준비**를 누릅니다(경고·주행 상태·음성 말하기를 실제로 전환). 앱을 다시 켜면 모두 가짜로 돌아갑니다.
+3. `cd tools/console && python3 console.py run scenarios/c1_tpms.json`
+
+콘솔 없이 보려면 디버그 메뉴에서 `c1_tpms_demo` 시나리오를 재생합니다(가짜 차량, 시연용 신호).
+
+**알아 둘 점**
+
+- 에뮬레이터에는 Android 표준 TTS 엔진이 없어 Pleos TextToSpeech SDK를 씁니다.
+- 오디오 포커스는 문장마다 요청하고 끝나면 돌려줍니다. SDK에 음량 조절이 없어 `LOSS_TRANSIENT_CAN_DUCK`에서는 음량을 낮추지 못하고 그대로 말합니다.
+- `tools/console`은 공개 문서에 없는 Virtual Console 내부 API를 씁니다. 에뮬레이터 v2.1.0에서만 확인했고, 시연·시험 도구로만 씁니다.
+- 조치 문구는 초안입니다. 차량 공식 매뉴얼과 대조가 필요한 항목은 `docs/c1/03-proposal-notes.md`에 있습니다.
+
 ## 다음 단계
 
 - 나머지 어댑터 7개 구현(각 담당)

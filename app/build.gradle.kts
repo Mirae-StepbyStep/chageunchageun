@@ -60,6 +60,7 @@ dependencies {
 
     // Pleos Vehicle SDK. import는 platform/vehicle 에서만 합니다.
     implementation(libs.pleos.vehicle)
+    implementation(libs.pleos.tts)
 
     testImplementation(libs.junit)
     testImplementation(libs.kotlinx.coroutines.test)
