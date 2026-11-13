@@ -1,0 +1,12 @@
+[
+  {"note": "C1 demo: TPMS turns on while driving, then the car stops"},
+  {"gear": "D"},
+  {"speed": 30},
+  {"wait": 3},
+  {"telltale": "TPMS", "state": "On"},
+  {"wait": 10},
+  {"speed": 0},
+  {"gear": "P"},
+  {"wait": 8},
+  {"telltale": "TPMS", "state": "Off"}
+]
