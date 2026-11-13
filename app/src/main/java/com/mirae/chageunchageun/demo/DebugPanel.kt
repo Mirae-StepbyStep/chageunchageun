@@ -75,6 +75,10 @@ fun DebugPanel(graph: AppGraph) {
         FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             OutlinedButton(onClick = { graph.portModes.setAll(PortMode.REAL) }) { Text("모두 실제") }
             OutlinedButton(onClick = { graph.portModes.setAll(PortMode.FAKE) }) { Text("모두 가짜") }
+            // C1 시연(Virtual Console)에 필요한 세 포트만 실제로 바꿉니다. 앱을 다시 켜면 모두 가짜로 돌아갑니다.
+            OutlinedButton(onClick = {
+                listOf(PortId.WARNING, PortId.DRIVE_STATE, PortId.SPEECH_OUT).forEach { graph.portModes.set(it, PortMode.REAL) }
+            }) { Text("C1 시연 준비") }
         }
 
         Text("가짜 차량 (아래 값은 모두 시연 신호)", style = MaterialTheme.typography.titleMedium)

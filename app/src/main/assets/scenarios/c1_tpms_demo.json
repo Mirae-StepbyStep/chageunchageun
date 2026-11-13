@@ -1,0 +1,10 @@
+{
+  "name": "C1 시연: 주행 중 공기압 경고 → 정차 후 조치 → 경고 해제",
+  "steps": [
+    { "atMs": 0,     "note": "주차 상태, 경고 초기화", "gear": "P", "uxRestricted": false, "warnings": [] },
+    { "atMs": 2000,  "note": "출발", "gear": "D", "uxRestricted": true },
+    { "atMs": 6000,  "note": "주의: 공기압 경고", "warnings": ["TIRE_PRESSURE"] },
+    { "atMs": 18000, "note": "정차", "gear": "P", "uxRestricted": false },
+    { "atMs": 30000, "note": "경고 해제", "warnings": [] }
+  ]
+}

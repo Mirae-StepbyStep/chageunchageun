@@ -1,0 +1,19 @@
+[
+  {"note": "C1 demo: TPMS turns on while driving, then the car stops. Speed is re-sent because the console coasts down about 2 km/h per second."},
+  {"gear": "D"},
+  {"speed": 30},
+  {"wait": 3},
+  {"speed": 30},
+  {"note": "TPMS on: the voice line takes about 7 s"},
+  {"telltale": "TPMS", "state": "On"},
+  {"wait": 4},
+  {"speed": 30},
+  {"wait": 4},
+  {"speed": 30},
+  {"wait": 3},
+  {"note": "Stop: the C1 screen opens with the action steps"},
+  {"speed": 0},
+  {"gear": "P"},
+  {"wait": 12},
+  {"telltale": "TPMS", "state": "Off"}
+]

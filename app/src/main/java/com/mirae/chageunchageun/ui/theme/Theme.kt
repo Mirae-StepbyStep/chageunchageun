@@ -7,13 +7,20 @@ import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 
-/** PRD 앱 디자인 룰의 5색. 다른 색은 쓰지 않습니다. */
+/**
+ * PRD 앱 디자인 룰의 5색. 다른 색은 쓰지 않습니다.
+ * 예외(11/12, C1): 경고 심각도 표시에만 [WarningRed]와 [WarningOrange]를 씁니다.
+ */
 object AppColors {
     val HyundaiBlue = Color(0xFF002C5F)
     val Sand = Color(0xFFF6F3F2)
     val ActiveBlue = Color(0xFF00AAD2) // 흰 글자 금지(대비 부족). 검정 글자만.
     val Black = Color(0xFF000000)
     val White = Color(0xFFFFFFFF)
+
+    // C1 경고 심각도 색. 경고 배지·카드 줄·경고등 아이콘·주행 중 경고 카드에만 씁니다.
+    val WarningRed = Color(0xFFB3261E) // 위험. 흰 글자(대비 6.5:1).
+    val WarningOrange = Color(0xFFE8710A) // 주의. 검정 글자(대비 6.8:1). 흰 글자 금지(3.1:1).
 }
 
 private val Light = lightColorScheme(
