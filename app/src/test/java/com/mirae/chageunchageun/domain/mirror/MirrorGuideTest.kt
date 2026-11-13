@@ -62,6 +62,22 @@ class MirrorGuideTest {
     }
 
     @Test
+    fun `한 바퀴의 처음과 끝에서만 흐려진다`() {
+        assertEquals(0f, MirrorGuide.fade(0f), 0f)
+        assertEquals(1f, MirrorGuide.fade(MirrorGuide.FADE), 0.001f)
+        assertEquals(1f, MirrorGuide.fade(0.5f), 0f)
+        assertEquals(0f, MirrorGuide.fade(1f), 0f)
+        // 맞은 상태를 충분히 오래 보여 줍니다.
+        assertTrue(1f - MirrorGuide.FADE - MirrorGuide.MOVE_END >= 0.4f)
+    }
+
+    @Test
+    fun `좌우 사이드미러는 같은 기준으로 안내한다`() {
+        assertTrue(MirrorStep.LEFT.body.endsWith("거울 모서리에 살짝 걸치게 맞춰주세요."))
+        assertTrue(MirrorStep.RIGHT.body.endsWith("거울 모서리에 살짝 걸치게 맞춰주세요."))
+    }
+
+    @Test
     fun `안내 문장은 짧게 유지한다`() {
         MirrorGuide.steps.forEach { assertTrue(it.name, it.body.length <= 40) }
     }

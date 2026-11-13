@@ -8,19 +8,24 @@ import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -31,6 +36,7 @@ import androidx.compose.ui.geometry.RoundRect
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
@@ -49,7 +55,6 @@ import com.mirae.chageunchageun.ui.common.CarScale
 import com.mirae.chageunchageun.ui.common.DrivingGate
 import com.mirae.chageunchageun.ui.common.GuideButton
 import com.mirae.chageunchageun.ui.common.GuideOutlinedButton
-import com.mirae.chageunchageun.ui.common.StatusDot
 import com.mirae.chageunchageun.ui.common.StepDots
 import com.mirae.chageunchageun.ui.common.keepWords
 import com.mirae.chageunchageun.ui.theme.AppColors
@@ -59,91 +64,186 @@ import com.mirae.chageunchageun.ui.theme.AppColors
  * 전체를 DrivingGate로 감싸서, 주행이 시작되면 그림과 애니메이션이 화면에서 빠집니다.
  */
 @Composable
-fun MirrorScreen(graph: AppGraph) {
+fun MirrorScreen(graph: AppGraph, onDone: () -> Unit = {}) {
     val vm: MirrorViewModel = viewModel { MirrorViewModel() }
     val ui by vm.ui.collectAsStateWithLifecycle()
+    val content: @Composable () -> Unit = {
+        Row(Modifier.fillMaxSize(), horizontalArrangement = Arrangement.spacedBy(32.dp)) {
+            PicturePanel(ui, Modifier.weight(1.25f).fillMaxHeight())
+            StepPanel(
+                ui = ui,
+                vm = vm,
+                // 다 본 뒤 나가면 다음에 들어올 때 처음부터 보이게 합니다.
+                onDone = { vm.restart(); onDone() },
+                modifier = Modifier.weight(1f).fillMaxHeight(),
+            )
+        }
+    }
 
     CarScale {
         Column(
             Modifier.fillMaxSize().padding(horizontal = 40.dp, vertical = 28.dp),
-            verticalArrangement = Arrangement.spacedBy(20.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
-            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Text("출발 전 미러 맞추기", style = MaterialTheme.typography.displaySmall, fontWeight = FontWeight.Bold)
-                Text("그림처럼 보이면 맞게 조절된 거예요.", style = MaterialTheme.typography.titleLarge)
-            }
-            DrivingGate(graph.driveRuntime) {
-                Row(Modifier.fillMaxSize(), horizontalArrangement = Arrangement.spacedBy(32.dp)) {
-                    PicturePanel(ui, Modifier.weight(1.25f).fillMaxHeight())
-                    StepPanel(ui, vm, Modifier.weight(1f).fillMaxHeight())
-                }
-            }
+            // 화면 이름은 작게 두고, 단계 제목이 가장 크게 보이게 합니다.
+            Text(
+                "출발 전 미러 맞추기",
+                style = MaterialTheme.typography.headlineSmall,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f),
+            )
+            // 완료 화면은 움직이는 그림이 없어 주행 중에도 그대로 둡니다("정차 후에…"로 바뀌지 않게).
+            if (ui.isLast) content() else DrivingGate(graph.driveRuntime, content)
         }
     }
 }
 
 @Composable
-private fun StepPanel(ui: MirrorUi, vm: MirrorViewModel, modifier: Modifier) {
-    Column(modifier, verticalArrangement = Arrangement.spacedBy(18.dp)) {
+private fun StepPanel(ui: MirrorUi, vm: MirrorViewModel, onDone: () -> Unit, modifier: Modifier) {
+    Column(modifier, verticalArrangement = Arrangement.spacedBy(16.dp)) {
         StepDots(ui.index, ui.total)
-        Text(ui.step.title, style = MaterialTheme.typography.displayMedium, fontWeight = FontWeight.Bold)
+        Text(ui.step.title, fontSize = 40.sp, lineHeight = 48.sp, fontWeight = FontWeight.Bold)
         Text(ui.step.body.keepWords(), style = MaterialTheme.typography.headlineMedium, lineHeight = 42.sp)
-        Spacer(Modifier.weight(1f))
-        Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-            if (ui.canGoBack) GuideOutlinedButton("이전", vm::previous, Modifier.weight(1f))
-            GuideButton(
-                text = if (ui.isLast) "처음부터 다시" else "다음",
-                onClick = if (ui.isLast) vm::restart else vm::next,
-                modifier = Modifier.weight(if (ui.canGoBack) 1.6f else 1f),
+        if (ui.step.howTo.isNotEmpty()) {
+            Text(
+                ui.step.howTo.keepWords(),
+                style = MaterialTheme.typography.titleLarge,
+                lineHeight = 32.sp,
+                color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
             )
         }
+        Spacer(Modifier.weight(1f))
+        // 왼쪽 자리를 항상 비워 두어, 단계가 바뀌어도 주 버튼 위치가 움직이지 않습니다.
+        Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+            Box(Modifier.weight(1f)) {
+                when {
+                    ui.isLast -> GuideOutlinedButton("다시 보기", vm::restart, Modifier.fillMaxWidth())
+                    ui.canGoBack -> GuideOutlinedButton("이전", vm::previous, Modifier.fillMaxWidth())
+                }
+            }
+            GuideButton(
+                // 앱은 거울이 맞았는지 알 수 없어, 거울 단계에서는 운전자가 직접 확인하고 넘어갑니다.
+                text = when {
+                    ui.isLast -> "홈으로"
+                    ui.animated -> "맞췄습니다"
+                    else -> "다음"
+                },
+                onClick = if (ui.isLast) onDone else vm::next,
+                modifier = Modifier.weight(1.4f),
+            )
+        }
+    }
+}
+
+/** 그림에 쓰는 색. 야간 배색에서는 하늘과 땅을 어둡게 바꿔 큰 흰 면이 눈부시지 않게 합니다. */
+private class Scene(
+    val line: Color,
+    val sky: Color,
+    val ground: Color,
+    val lane: Color,
+    val body: Color,
+    val interior: Color,
+)
+
+@Composable
+private fun scene(): Scene {
+    val line = MaterialTheme.colorScheme.onSurface
+    return if (isSystemInDarkTheme()) {
+        Scene(
+            line = line,
+            sky = AppColors.HyundaiBlue,
+            ground = AppColors.White.copy(alpha = 0.14f),
+            lane = AppColors.White.copy(alpha = 0.12f),
+            body = AppColors.White.copy(alpha = 0.30f),
+            interior = AppColors.Black,
+        )
+    } else {
+        Scene(
+            line = line,
+            sky = AppColors.White,
+            ground = AppColors.Sand,
+            lane = AppColors.HyundaiBlue.copy(alpha = 0.18f),
+            body = AppColors.HyundaiBlue,
+            interior = AppColors.HyundaiBlue,
+        )
     }
 }
 
 /** 왼쪽 그림 영역. 카드 안에 그림을 두고, 거울 단계에서는 지금 그림이 어느 상태인지 아래에 적습니다. */
 @Composable
 private fun PicturePanel(ui: MirrorUi, modifier: Modifier) {
-    val misalignment = if (ui.animated) {
-        val transition = rememberInfiniteTransition(label = "mirror")
-        val progress by transition.animateFloat(
-            initialValue = 0f,
-            targetValue = 1f,
-            animationSpec = infiniteRepeatable(tween(4_500, easing = LinearEasing), RepeatMode.Restart),
-            label = "progress",
-        )
-        MirrorGuide.misalignment(progress)
-    } else {
-        0f
-    }
-    val aligned = misalignment == 0f
-    val line = MaterialTheme.colorScheme.onSurface
-
+    val scene = scene()
     Column(
         modifier
             .clip(RoundedCornerShape(32.dp))
             .background(MaterialTheme.colorScheme.surfaceContainerHighest)
-            .padding(28.dp),
+            .padding(20.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
-        Canvas(Modifier.fillMaxWidth().weight(1f)) {
-            when (ui.step) {
-                MirrorStep.POSTURE -> drawPosture(line)
-                MirrorStep.ROOM -> drawRoomMirror(misalignment, line)
-                MirrorStep.LEFT -> drawSideMirror(misalignment, line, bodyOnRight = true)
-                MirrorStep.RIGHT -> drawSideMirror(misalignment, line, bodyOnRight = false)
-                MirrorStep.DONE -> drawDone()
-            }
-        }
         if (ui.animated) {
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                StatusDot(active = aligned)
-                Text(
-                    if (aligned) "이렇게 보이면 맞아요" else "점선 자리에 오도록 조절해요",
-                    style = MaterialTheme.typography.headlineSmall,
+            // 단계가 바뀌면 애니메이션을 처음(어긋난 상태)부터 다시 시작합니다.
+            key(ui.step) {
+                val transition = rememberInfiniteTransition(label = "mirror")
+                val progress by transition.animateFloat(
+                    initialValue = 0f,
+                    targetValue = 1f,
+                    animationSpec = infiniteRepeatable(tween(MirrorGuide.LOOP_MS, easing = LinearEasing), RepeatMode.Restart),
+                    label = "progress",
                 )
+                val misalignment = MirrorGuide.misalignment(progress)
+                Canvas(Modifier.fillMaxWidth().weight(1f).graphicsLayer { alpha = MirrorGuide.fade(progress) }) {
+                    when (ui.step) {
+                        MirrorStep.ROOM -> drawRoomMirror(misalignment, scene)
+                        MirrorStep.LEFT -> drawSideMirror(misalignment, scene, bodyOnRight = true)
+                        else -> drawSideMirror(misalignment, scene, bodyOnRight = false)
+                    }
+                }
+                StatusPill(aligned = misalignment == 0f)
+            }
+        } else {
+            Canvas(Modifier.fillMaxWidth().weight(1f)) {
+                if (ui.step == MirrorStep.DONE) drawDone() else drawPosture(scene.line)
             }
         }
+    }
+}
+
+/** 그림 아래 상태 줄. 맞은 순간이 곁눈으로도 보이게 줄 전체의 색과 표시를 바꿉니다. */
+@Composable
+private fun StatusPill(aligned: Boolean) {
+    val scheme = MaterialTheme.colorScheme
+    val line = scheme.onSurface
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .height(56.dp)
+            .clip(RoundedCornerShape(16.dp))
+            .background(if (aligned) scheme.secondary.copy(alpha = 0.22f) else line.copy(alpha = 0.07f))
+            .padding(horizontal = 16.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        Canvas(Modifier.size(28.dp)) {
+            val r = size.minDimension / 2f
+            if (aligned) {
+                drawCircle(AppColors.ActiveBlue, r)
+                val check = Path().apply {
+                    moveTo(center.x - r * 0.45f, center.y + r * 0.02f)
+                    lineTo(center.x - r * 0.10f, center.y + r * 0.36f)
+                    lineTo(center.x + r * 0.48f, center.y - r * 0.30f)
+                }
+                drawPath(check, AppColors.Black, style = Stroke(r * 0.2f, cap = StrokeCap.Round, join = StrokeJoin.Round))
+            } else {
+                drawCircle(line.copy(alpha = 0.6f), r * 0.85f, style = dashed(r * 0.16f))
+            }
+        }
+        Text(
+            if (aligned) "이렇게 보이면 맞습니다" else "점선 자리에 오게 맞춰주세요",
+            fontSize = 24.sp,
+            fontWeight = FontWeight.SemiBold,
+            color = line,
+        )
     }
 }
 
@@ -164,7 +264,7 @@ private fun roundRectPath(rect: Rect, radius: Float) =
 
 /** 옆에서 본 운전 자세: 좌석에 등을 붙이고, 팔을 살짝 굽혀 핸들을 잡은 모습. */
 private fun DrawScope.drawPosture(line: Color) {
-    val box = fitRect(1.3f)
+    val box = fitRect(1.15f)
     fun p(x: Float, y: Float) = Offset(box.left + box.width * x, box.top + box.height * y)
     val u = box.height / 100f
     val seatColor = AppColors.ActiveBlue
@@ -201,8 +301,9 @@ private fun DrawScope.drawPosture(line: Color) {
 }
 
 /** 룸미러: 뒷유리(밝은 창)가 거울 가운데 기준 틀(점선)에 들어옵니다. */
-private fun DrawScope.drawRoomMirror(misalignment: Float, line: Color) {
-    val box = fitRect(2.3f)
+private fun DrawScope.drawRoomMirror(misalignment: Float, scene: Scene) {
+    val line = scene.line
+    val box = fitRect(1.9f)
     val w = box.width
     val stalk = box.height * 0.16f
     val mirror = Rect(Offset(box.left, box.top + stalk), Size(w, box.height - stalk))
@@ -217,14 +318,14 @@ private fun DrawScope.drawRoomMirror(misalignment: Float, line: Color) {
     drawLine(line, Offset(mirror.center.x, box.top), Offset(mirror.center.x, mirror.top), mh * 0.12f, StrokeCap.Round)
     clipPath(roundRectPath(mirror, radius)) {
         // 차 안(어두운 실내)
-        drawRect(AppColors.HyundaiBlue, mirror.topLeft, mirror.size)
+        drawRect(scene.interior, mirror.topLeft, mirror.size)
         // 뒷유리로 보이는 바깥: 하늘과 도로
         val glass = Rect(target + shift, window)
         clipPath(roundRectPath(glass, mh * 0.10f)) {
-            drawRect(AppColors.White, glass.topLeft, glass.size)
+            drawRect(scene.sky, glass.topLeft, glass.size)
             val horizon = glass.top + glass.height * 0.55f
-            drawRect(AppColors.Sand, Offset(glass.left, horizon), Size(glass.width, glass.bottom - horizon))
-            drawLine(AppColors.Black, Offset(glass.left, horizon), Offset(glass.right, horizon), mh * 0.012f)
+            drawRect(scene.ground, Offset(glass.left, horizon), Size(glass.width, glass.bottom - horizon))
+            drawLine(line.copy(alpha = 0.6f), Offset(glass.left, horizon), Offset(glass.right, horizon), mh * 0.012f)
             val road = Path().apply {
                 moveTo(glass.center.x - glass.width * 0.05f, horizon)
                 lineTo(glass.center.x + glass.width * 0.05f, horizon)
@@ -232,13 +333,13 @@ private fun DrawScope.drawRoomMirror(misalignment: Float, line: Color) {
                 lineTo(glass.center.x - glass.width * 0.30f, glass.bottom)
                 close()
             }
-            drawPath(road, AppColors.HyundaiBlue.copy(alpha = 0.35f))
+            drawPath(road, scene.lane)
         }
         // 뒷좌석 머리 받침
         val rest = Size(w * 0.09f, mh * 0.30f)
         for (dx in listOf(-0.19f, 0.19f)) {
             drawRoundRect(
-                AppColors.Black,
+                AppColors.White.copy(alpha = 0.22f),
                 Offset(mirror.center.x + w * dx - rest.width / 2f, mirror.bottom - rest.height * 0.85f) + shift,
                 rest,
                 CornerRadius(rest.width * 0.35f),
@@ -247,7 +348,7 @@ private fun DrawScope.drawRoomMirror(misalignment: Float, line: Color) {
         // 맞출 자리
         drawRoundRect(
             AppColors.ActiveBlue, target, window, CornerRadius(mh * 0.10f),
-            style = if (aligned) Stroke(mh * 0.035f) else dashed(mh * 0.03f),
+            style = if (aligned) Stroke(mh * 0.06f) else dashed(mh * 0.03f),
         )
     }
     drawRoundRect(line, mirror.topLeft, mirror.size, CornerRadius(radius), style = Stroke(mh * 0.04f))
@@ -257,8 +358,9 @@ private fun DrawScope.drawRoomMirror(misalignment: Float, line: Color) {
  * 사이드미러: 뒷문 손잡이가 차체 쪽 아래 모서리(점선 원)에 오도록 풍경이 움직입니다.
  * [bodyOnRight]가 참이면 왼쪽 미러(차체가 거울 오른쪽에 보임)입니다.
  */
-private fun DrawScope.drawSideMirror(misalignment: Float, line: Color, bodyOnRight: Boolean) {
-    val box = fitRect(1.45f)
+private fun DrawScope.drawSideMirror(misalignment: Float, scene: Scene, bodyOnRight: Boolean) {
+    val line = scene.line
+    val box = fitRect(1.25f)
     val mh = box.height
     val arm = box.width * 0.10f
     val mw = box.width - arm
@@ -271,33 +373,39 @@ private fun DrawScope.drawSideMirror(misalignment: Float, line: Color, bodyOnRig
     // 거울 안 좌표(0~1). x는 차체 쪽이 1입니다.
     fun p(x: Float, y: Float) = Offset(left + mw * (if (bodyOnRight) x else 1f - x), box.top + mh * y)
 
-    val targetX = 0.84f
-    val targetY = 0.80f
+    val targetX = 0.87f
+    val targetY = 0.83f
     val hx = targetX - 0.27f * misalignment
     val hy = targetY - 0.30f * misalignment
     val horizon = hy - 0.40f
 
-    // 팔
-    val armY = box.top + mh * 0.62f
-    val armFrom = if (bodyOnRight) mirror.right else mirror.left
+    // 거울을 차체에 붙이는 받침(차체 쪽 아래)
+    val armFrom = if (bodyOnRight) mirror.right - radius * 0.3f else mirror.left + radius * 0.3f
     val armTo = if (bodyOnRight) box.right else box.left
-    drawLine(line, Offset(armFrom, armY), Offset(armTo, armY), mh * 0.16f, StrokeCap.Butt)
+    val mount = Path().apply {
+        moveTo(armFrom, box.top + mh * 0.52f)
+        lineTo(armTo, box.top + mh * 0.66f)
+        lineTo(armTo, box.top + mh * 0.84f)
+        lineTo(armFrom, box.top + mh * 0.86f)
+        close()
+    }
+    drawPath(mount, line)
 
     clipPath(roundRectPath(mirror, radius)) {
         // 하늘과 땅
-        drawRect(AppColors.White, mirror.topLeft, mirror.size)
+        drawRect(scene.sky, mirror.topLeft, mirror.size)
         val groundTop = box.top + mh * horizon
-        drawRect(AppColors.Sand, Offset(left, groundTop), Size(mw, (mirror.bottom - groundTop).coerceAtLeast(0f)))
-        drawLine(AppColors.Black, Offset(left, groundTop), Offset(left + mw, groundTop), mh * 0.008f)
+        drawRect(scene.ground, Offset(left, groundTop), Size(mw, (mirror.bottom - groundTop).coerceAtLeast(0f)))
+        drawLine(line.copy(alpha = 0.6f), Offset(left, groundTop), Offset(left + mw, groundTop), mh * 0.008f)
         // 옆 차로: 멀어질수록 좁아지는 도로와 차선
         val lane = Path().apply {
             val a = p(hx - 0.34f, horizon); val b = p(hx - 0.46f, horizon)
             val c = p(hx - 1.25f, hy + 0.6f); val d = p(hx - 0.30f, hy + 0.6f)
             moveTo(a.x, a.y); lineTo(b.x, b.y); lineTo(c.x, c.y); lineTo(d.x, d.y); close()
         }
-        drawPath(lane, AppColors.HyundaiBlue.copy(alpha = 0.18f))
+        drawPath(lane, scene.lane)
         drawLine(
-            AppColors.Black, p(hx - 0.46f, horizon), p(hx - 1.25f, hy + 0.6f), mh * 0.012f,
+            line, p(hx - 0.46f, horizon), p(hx - 1.25f, hy + 0.6f), mh * 0.012f,
             pathEffect = PathEffect.dashPathEffect(floatArrayOf(mh * 0.06f, mh * 0.045f)),
         )
         // 내 차 옆면
@@ -308,7 +416,7 @@ private fun DrawScope.drawSideMirror(misalignment: Float, line: Color, bodyOnRig
             val d = p(hx + 0.8f, hy - 0.62f)
             moveTo(a.x, a.y); lineTo(b.x, b.y); lineTo(c.x, c.y); lineTo(d.x, d.y); close()
         }
-        drawPath(body, AppColors.HyundaiBlue)
+        drawPath(body, scene.body)
         // 창문과 문 사이 선
         val glass = Path().apply {
             val a = p(hx - 0.165f, hy - 0.50f); val b = p(hx - 0.145f, hy - 0.16f)
@@ -318,7 +426,7 @@ private fun DrawScope.drawSideMirror(misalignment: Float, line: Color, bodyOnRig
         drawPath(glass, AppColors.White.copy(alpha = 0.28f))
         drawLine(AppColors.Black.copy(alpha = 0.5f), p(hx + 0.12f, hy - 0.16f), p(hx + 0.13f, hy + 0.6f), mh * 0.008f)
         // 뒷문 손잡이
-        val handle = Size(mw * 0.13f, mh * 0.05f)
+        val handle = Size(mw * 0.16f, mh * 0.06f)
         val center = p(hx, hy)
         drawRoundRect(
             AppColors.White,
@@ -329,7 +437,7 @@ private fun DrawScope.drawSideMirror(misalignment: Float, line: Color, bodyOnRig
         // 맞출 자리
         drawCircle(
             AppColors.ActiveBlue, radius = mh * 0.11f, center = p(targetX, targetY),
-            style = if (aligned) Stroke(mh * 0.022f) else dashed(mh * 0.018f),
+            style = if (aligned) Stroke(mh * 0.036f) else dashed(mh * 0.018f),
         )
     }
     drawRoundRect(line, mirror.topLeft, mirror.size, CornerRadius(radius), style = Stroke(mh * 0.022f))

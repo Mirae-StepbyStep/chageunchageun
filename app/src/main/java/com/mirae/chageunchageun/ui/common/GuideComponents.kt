@@ -52,12 +52,12 @@ fun CarScale(content: @Composable () -> Unit) {
 fun StepDots(index: Int, total: Int, modifier: Modifier = Modifier) {
     val on = MaterialTheme.colorScheme.secondary
     val off = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.18f)
-    Row(modifier, horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+    Row(modifier, horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
         repeat(total) { i ->
             Box(
                 Modifier
-                    .height(10.dp)
-                    .width(if (i == index) 36.dp else 10.dp)
+                    .height(14.dp)
+                    .width(if (i == index) 48.dp else 14.dp)
                     .clip(CircleShape)
                     .background(if (i <= index) on else off),
             )
@@ -65,7 +65,7 @@ fun StepDots(index: Int, total: Int, modifier: Modifier = Modifier) {
         Text(
             "${(index + 1).coerceAtMost(total)} / $total",
             Modifier.padding(start = 8.dp),
-            style = MaterialTheme.typography.titleMedium,
+            fontSize = 22.sp,
         )
     }
 }
