@@ -277,4 +277,49 @@ class WarningAnnouncerTest {
 
         assertEquals(1, speech.spoken.size)
     }
+
+    private fun TestScope.startCounting(bus: FakeVehicleBus, onParked: () -> Unit) {
+        val runtime = DriveRuntime(FakeDriveStateSource(bus), backgroundScope)
+        backgroundScope.launch { WarningAnnouncer(source, speech, runtime, onParked).run() }
+        runCurrent()
+    }
+
+    private fun TestScope.shift(bus: FakeVehicleBus, gear: Gear) {
+        bus.gear.value = gear
+        runCurrent()
+    }
+
+    @Test
+    fun `주행 중에 켜진 경고가 남은 채 주차하면 조치 화면을 한 번 요청한다`() = runTest {
+        val bus = FakeVehicleBus().apply { gear.value = Gear.D }
+        var requests = 0
+        startCounting(bus) { requests++ }
+        emit(value(WarningType.TIRE_PRESSURE))
+        assertEquals(0, requests)
+
+        shift(bus, Gear.P)
+        assertEquals(1, requests)
+
+        // 같은 경고로 다시 출발했다가 주차해도 또 요청하지 않습니다.
+        shift(bus, Gear.D)
+        shift(bus, Gear.P)
+        assertEquals(1, requests)
+    }
+
+    @Test
+    fun `주차 중에 켜졌거나 주차 전에 꺼졌거나 정보 경고뿐이면 요청하지 않는다`() = runTest {
+        val bus = FakeVehicleBus()
+        var requests = 0
+        startCounting(bus) { requests++ }
+
+        emit(value(WarningType.TIRE_PRESSURE)) // 주차 중에 켜짐
+        emit(value())
+        shift(bus, Gear.D)
+        emit(value(WarningType.TIRE_PRESSURE)) // 주행 중에 켜졌다가 주차 전에 꺼짐
+        emit(value())
+        emit(value(WarningType.ESC_OFF)) // 정보
+        shift(bus, Gear.P)
+
+        assertEquals(0, requests)
+    }
 }

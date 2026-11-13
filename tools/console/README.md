@@ -50,7 +50,7 @@ The whole file is validated before the first write. Each step is printed with a 
 
 | File | Sequence |
 |---|---|
-| `scenarios/c1_tpms.json` | D, 30 km/h, wait 3 s, TPMS On, wait 10 s, speed 0, P, wait 8 s, TPMS Off |
+| `scenarios/c1_tpms.json` | Main demo, about 30 s. D, 30 km/h, wait 3 s, TPMS On, 11 s of driving (the voice line takes about 7 s), speed 0, P, wait 12 s, TPMS Off. Speed is re-sent every 3 to 4 s because the console coasts down |
 | `scenarios/c1_probe_all.json` | TPMS, SeatBelt, Airbag, Engine, PowerDown, EngineOilPressure in turn: On, wait 4 s, Off, wait 2 s. Does not touch the gear; put the car in P first |
 | `scenarios/c1_all_warnings.json` | Rehearsal of every warning the app maps, not the main demo. In P: TPMS, MDPS, ABS, ESC, ESCOff, EVSystem, PowerDown, LowVoltBattery, Airbag in turn (On, wait 6 s, Off, wait 3 s). Then D: ParkingBrake and ElectronicParkingBrake (On, wait 6 s, Off), then P. Takes about 95 s |
 

@@ -1,5 +1,7 @@
 package com.mirae.chageunchageun.feature.warning
 
+import com.mirae.chageunchageun.core.model.DrivePhase
+import com.mirae.chageunchageun.core.model.Severity
 import com.mirae.chageunchageun.core.model.Signal
 import com.mirae.chageunchageun.core.model.SituationEvent
 import com.mirae.chageunchageun.core.model.Source
@@ -24,11 +26,14 @@ class WarningAnnouncer(
     private val warnings: WarningSource,
     private val speech: SpeechOutput,
     private val runtime: DriveRuntime,
+    /** 주행 중에 켜진 경고(정보 제외)가 남아 있는 채로 주차했을 때 한 번 부릅니다. 조치 화면을 여는 데 씁니다. */
+    private val onParkedWithWarning: () -> Unit = {},
 ) {
     suspend fun run() = coroutineScope {
         var known = emptySet<WarningType>()
         // 경고별로 말하는 중이거나 말할 차례를 기다리는 작업.
         val speaking = mutableMapOf<WarningType, Job>()
+        var showStepsWhenParked = false
         // ponytail: 순서대로 말하므로 위험 경고도 재생 중인 주의 문장이 끝난 뒤 나옵니다. 끊어야 하면 실제 TTS 어댑터와 함께 바꿉니다.
         warnings.activeWarnings.combine(runtime.phase, ::Pair).collect { (signal, phase) ->
             // 값을 못 받은 것은 해제가 아닙니다.
@@ -48,6 +53,16 @@ class WarningAnnouncer(
                 report(guide, signal.source)
                 // 말하는 동안에도 해제를 바로 알 수 있게 따로 실행합니다. 시작한 순서대로 말합니다.
                 speaking[guide.type] = launch { say(guide) }
+            }
+            // 주행 중에 켜진 경고가 있으면 주차했을 때 조치 화면을 열어 달라고 알립니다.
+            val spokenKinds = { types: Collection<WarningType> ->
+                types.any { WarningGuidance.guide(it).severity != Severity.INFO }
+            }
+            if (phase == DrivePhase.DRIVING && spokenKinds(added.map { it.type })) showStepsWhenParked = true
+            if (!spokenKinds(active)) showStepsWhenParked = false
+            if (phase == DrivePhase.PARKED && showStepsWhenParked) {
+                showStepsWhenParked = false
+                onParkedWithWarning()
             }
         }
     }
