@@ -378,7 +378,11 @@ private fun DrawScope.drawRoomMirror(misalignment: Float, scene: Scene, measurer
                 close()
             }
             drawPath(road, scene.lane)
-            drawText(label("뒷유리", line), topLeft = glass.topLeft + Offset(pad, pad * 0.5f))
+            // 뒷유리가 거울 위로 벗어나 있는 동안에도 이름표가 잘리지 않게 거울 안쪽에 둡니다.
+            drawText(
+                label("뒷유리", line),
+                topLeft = Offset(glass.left + pad, maxOf(glass.top, mirror.top + mh * 0.04f) + pad * 0.5f),
+            )
         }
         // 뒷좌석 머리 받침
         val rest = Size(w * 0.09f, mh * 0.30f)
@@ -390,11 +394,14 @@ private fun DrawScope.drawRoomMirror(misalignment: Float, scene: Scene, measurer
                 CornerRadius(rest.width * 0.35f),
             )
         }
-        val headrests = label("뒷좌석 머리받침", AppColors.White)
-        drawText(
-            headrests,
-            topLeft = Offset(mirror.center.x - headrests.size.width / 2f, mirror.bottom - headrests.size.height - pad) + shift,
-        )
+        // 머리 받침 이름표는 맞은 뒤에만 보입니다. 움직이는 동안에는 점선과 겹쳐 읽기 어렵습니다.
+        if (aligned) {
+            val headrests = label("뒷좌석 머리받침", AppColors.White)
+            drawText(
+                headrests,
+                topLeft = Offset(mirror.center.x - headrests.size.width / 2f, mirror.bottom - headrests.size.height - pad),
+            )
+        }
         // 맞출 자리. 뒷유리가 들어오기 전에는 점선 왼쪽에 "여기로"를 적습니다.
         if (!aligned) {
             val here = label("여기로", AppColors.White)
