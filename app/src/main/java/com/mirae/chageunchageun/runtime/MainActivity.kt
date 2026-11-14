@@ -34,15 +34,16 @@ import com.mirae.chageunchageun.ui.theme.AppTheme
  * 앱의 화면 목록. PRD 구현 범위(11월 10일 결정)를 따릅니다. 새 화면은 여기에 한 줄 추가합니다(PR 리뷰).
  * - 필수: A3, B1, C1 / 시간이 되면: A5, B2 / SDK 승인 후: E2
  */
-enum class AppScreen(val label: String, val debugOnly: Boolean = false) {
+enum class AppScreen(val label: String, val debugOnly: Boolean = false, val hidden: Boolean = false) {
     HOME("홈"),
     ONBOARDING("첫 실행"),
     MIRROR("미러 맞추기"),
     PARKING("B1 주차"),
     WARNING("C1 경고"),
     PRACTICE("조작 연습"),
-    TOLL("B2 톨게이트"),
-    VOICE("E2 음성"),
+    // 시연 영상에서 쓰지 않아 탭 줄에서만 숨깁니다. 다시 보이려면 hidden = true를 지웁니다.
+    TOLL("B2 톨게이트", hidden = true),
+    VOICE("E2 음성", hidden = true),
     SIGNALS("신호 점검", debugOnly = true),
     DEBUG("디버그", debugOnly = true),
 }
@@ -58,7 +59,7 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun AppRoot(graph: AppGraph) {
     var current by rememberSaveable { mutableStateOf(AppScreen.HOME) }
-    val screens = AppScreen.entries.filter { !it.debugOnly || BuildConfig.DEBUG }
+    val screens = AppScreen.entries.filter { !it.hidden && (!it.debugOnly || BuildConfig.DEBUG) }
     LaunchedEffect(graph) { graph.screenRequests.collect { current = it } }
 
     Surface(Modifier.fillMaxSize()) {
