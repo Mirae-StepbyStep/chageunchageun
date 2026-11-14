@@ -37,7 +37,9 @@ import com.mirae.chageunchageun.platform.vehicle.PleosVehicleSession
 import com.mirae.chageunchageun.platform.vehicle.PleosWarningSource
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeoutOrNull
 
 /**
  * 앱의 조립 지점(수동 DI). 포트마다 실제 구현(platform/)과 가짜 구현(demo/)을 둘 다 만들어 두고,
@@ -100,6 +102,14 @@ class AppGraph(private val context: Context, val appScope: CoroutineScope) {
         appScope.launch {
             WarningAnnouncer(warningSource, speechOutput, driveRuntime) { screenRequests.tryEmit(AppScreen.WARNING) }.run()
         }
+        // 첫 실행을 마치지 않았으면 첫 실행 화면에서 시작합니다. 앱을 켠 직후 정차가 확인될 때만 한 번 요청하고,
+        // 주행 중이거나 차량 값이 늦으면 홈에 둡니다(홈의 "처음 설정" 카드로 들어갈 수 있음).
+        appScope.launch {
+            if (userSettings.firstRunCompleted.value) return@launch
+            withTimeoutOrNull(START_ON_FIRST_RUN_WAIT_MILLIS) { driveRuntime.canShowDetail.first { it } } ?: return@launch
+            screenRequests.subscriptionCount.first { it > 0 } // MainActivity가 받기 시작한 뒤에 보냅니다
+            screenRequests.emit(AppScreen.ONBOARDING)
+        }
     }
 
     private fun <P> switch(id: PortId, real: P, fake: P) = PortSwitch(portModes, id, real, fake)
@@ -110,3 +120,6 @@ class AppGraph(private val context: Context, val appScope: CoroutineScope) {
     fun loadScenario(fileName: String): Scenario =
         context.assets.open("scenarios/$fileName").bufferedReader().use { ScenarioParser.parse(it.readText()) }
 }
+
+/** 앱을 켠 뒤 정차 여부가 확인되기를 기다리는 시간. 차량 값은 연결 뒤에 오므로 바로 알 수 없습니다. */
+private const val START_ON_FIRST_RUN_WAIT_MILLIS = 3_000L
