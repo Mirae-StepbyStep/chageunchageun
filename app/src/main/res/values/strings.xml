@@ -35,4 +35,19 @@
     <string name="onboarding_edit_location_off_desc">위치를 쓰는 안내 없이 쓸게요.</string>
     <string name="onboarding_edit_level">안내 깊이</string>
     <string name="onboarding_debug_reset">처음 설정 다시 하기</string>
+
+    <!-- Home (feature/home) -->
+    <string name="home_level_label">안내: %1$s</string>
+    <string name="home_first_run_title">처음 설정을 마쳐 주세요</string>
+    <string name="home_start">시작하기</string>
+    <string name="home_warning_summary">%1$s · %2$s</string>
+    <string name="home_warning_more">외 %1$d건</string>
+    <string name="home_warning_detail">자세히 보기</string>
+    <string name="home_warning_severity">%1$s 경고</string>
+    <string name="home_warning_icon">%1$s 경고등</string>
+    <string name="home_mirror_title">출발 전에 미러를 맞춰 보세요</string>
+    <string name="home_mirror_button">미러 맞추기</string>
+    <string name="home_practice_title">조작 연습</string>
+    <string name="home_settings_change">바꾸기</string>
+    <string name="home_driving_notice">안내는 음성으로 드려요. 운전에 집중하세요.</string>
 </resources>

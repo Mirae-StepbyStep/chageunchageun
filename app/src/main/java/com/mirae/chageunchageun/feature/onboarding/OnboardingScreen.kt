@@ -296,8 +296,9 @@ private fun OnboardingUi.locationLabel(): Int = when {
     else -> R.string.onboarding_location_on
 }
 
+/** Display name of a level. Also used by Home. */
 @StringRes
-private fun AdvisorLevel.label(): Int = when (this) {
+internal fun AdvisorLevel.label(): Int = when (this) {
     AdvisorLevel.DETAILED -> R.string.onboarding_level_detailed
     AdvisorLevel.NORMAL -> R.string.onboarding_level_normal
     AdvisorLevel.BRIEF -> R.string.onboarding_level_brief
