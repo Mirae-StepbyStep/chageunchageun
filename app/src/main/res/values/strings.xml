@@ -1,3 +1,38 @@
 <resources>
     <string name="app_name">차근차근</string>
+
+    <!-- First run and settings (feature/onboarding) -->
+    <string name="onboarding_restricted">정차하면 처음 설정을 이어서 할게요.</string>
+    <string name="onboarding_location_title">위치 정보를 사용할까요?</string>
+    <string name="onboarding_location_body">주차장이나 톨게이트에 가까워지면 먼저 안내하려고 차량 위치를 사용해요. 나중에 홈에서 바꿀 수 있어요.</string>
+    <string name="onboarding_location_agree">동의해요</string>
+    <string name="onboarding_location_later">나중에 할게요</string>
+    <string name="onboarding_permission_off">위치 권한이 꺼져 있어요. 차량 설정에서 켤 수 있어요.</string>
+    <string name="onboarding_level_title">안내를 얼마나 자세히 들을까요?</string>
+    <string name="onboarding_level_detailed">자세히</string>
+    <string name="onboarding_level_detailed_desc">처음이에요. 모든 안내를 자세히 들을게요.</string>
+    <string name="onboarding_level_normal">보통</string>
+    <string name="onboarding_level_normal_desc">조금 익숙해요. 처음만 자세히, 반복되면 짧게.</string>
+    <string name="onboarding_level_brief">간단히</string>
+    <string name="onboarding_level_brief_desc">익숙해요. 필요할 때 물어볼게요.</string>
+    <string name="onboarding_level_note">경고 안내는 레벨과 관계없이 항상 자세히 알려드려요.</string>
+    <string name="onboarding_selected">선택됨</string>
+    <string name="onboarding_next">다음</string>
+    <string name="onboarding_back">이전</string>
+    <string name="onboarding_done_title">준비됐어요</string>
+    <string name="onboarding_summary_location">위치 사용: %1$s</string>
+    <string name="onboarding_summary_level">안내 깊이: %1$s</string>
+    <string name="onboarding_location_on">켜짐</string>
+    <string name="onboarding_location_off">꺼짐</string>
+    <string name="onboarding_location_permission_off">권한 꺼짐</string>
+    <string name="onboarding_to_mirror">미러부터 맞춰볼까요?</string>
+    <string name="onboarding_to_home">홈으로</string>
+    <string name="onboarding_edit_title">내 설정</string>
+    <string name="onboarding_edit_location">위치 사용</string>
+    <string name="onboarding_edit_location_on">사용해요</string>
+    <string name="onboarding_edit_location_on_desc">주차장이나 톨게이트에 가까워지면 먼저 안내해요.</string>
+    <string name="onboarding_edit_location_off">사용 안 해요</string>
+    <string name="onboarding_edit_location_off_desc">위치를 쓰는 안내 없이 쓸게요.</string>
+    <string name="onboarding_edit_level">안내 깊이</string>
+    <string name="onboarding_debug_reset">처음 설정 다시 하기</string>
 </resources>
