@@ -152,6 +152,62 @@ class ParkingSteeringGuideTest {
         assertNull(p.next(true, parked, 15000))
     }
 
+    /** 200ms마다 [at]이 주는 안내를 넣고, 말한 문장을 (시각, 문장)으로 모읍니다. */
+    private fun run(p: VoiceGuidePolicy, from: Long, to: Long, at: (Long) -> SteeringInstruction) =
+        (from..to step 200).mapNotNull { t -> p.next(true, at(t), t)?.let { t to it } }
+
+    @Test
+    fun wobbleAroundTheTargetSpeaksHoldOnce() {
+        val p = primed(turn(0f, 270f))
+        val hold = turn(230f, 270f) // 남은 40°: 도달
+        val off = turn(220f, 270f) // 남은 50°: 화면 문구는 "더 돌리세요"
+        assertEquals(InstructionKind.HOLD, hold.kind)
+        assertEquals(InstructionKind.TURN_MORE, off.kind)
+        // 20초 동안 0.4초마다 40°↔50°로 흔들립니다. 그 사이 목표도 다시 계산됩니다(270°→300°).
+        val spoken = run(p, 4500, 24500) { t ->
+            val target = if (t < 14000) 270f else 300f
+            turn(if ((t / 400) % 2 == 0L) target - 40f else target - 50f, target)
+        }
+        assertEquals(listOf(hold.voiceText), spoken.map { it.second })
+    }
+
+    @Test
+    fun holdIsNotRepeatedWithinCooldownEvenWithANewKey() {
+        val p = primed(turn(0f, 270f))
+        val hold = turn(260f, 270f)
+        assertEquals(listOf(hold.voiceText), run(p, 4500, 8000) { hold }.map { it.second })
+        val spokenAt = 6800L
+        // 단계가 바뀌어 키가 달라져도 8초 안에는 "유지"를 다시 말하지 않습니다.
+        val other = steeringInstruction(260f, 270f, phase = ParkPhase.STRAIGHTEN)
+        assertNotEquals(hold.voiceKey, other.voiceKey)
+        val again = run(p, 8200, 20000) { other }
+        assertEquals(1, again.size)
+        assertTrue(again[0].first - spokenAt >= 8000)
+    }
+
+    @Test
+    fun realDirectionChangeStillSpeaksAfterGap() {
+        val p = primed(turn(0f, 270f))
+        val hold = turn(260f, 270f)
+        val holdAt = run(p, 4500, 8000) { hold }.single().first
+        // 목표가 반대쪽으로 바뀜: 유지 직후라도 gapMs(2.5초)만 지나면 말합니다.
+        val back = turn(260f, 90f)
+        assertEquals(InstructionKind.TURN_BACK, back.kind)
+        val spoken = run(p, holdAt + 200, holdAt + 6000) { back }
+        assertEquals(listOf(back.voiceText), spoken.map { it.second })
+        assertTrue(spoken[0].first - holdAt in 2500..2700)
+    }
+
+    @Test
+    fun arrivalSpeaksImmediatelyWhileHolding() {
+        val p = primed(turn(0f, 270f))
+        val hold = turn(260f, 270f)
+        val holdAt = run(p, 4500, 8000) { hold }.single().first
+        val arrived = steeringInstruction(260f, 270f, done = true, phase = ParkPhase.DONE)
+        assertEquals(InstructionKind.ARRIVED_SHIFT_P, arrived.kind)
+        assertEquals(arrived.voiceText, p.next(true, arrived, holdAt + 200))
+    }
+
     @Test
     fun turningGuidanceOffResetsVoice() {
         val p = VoiceGuidePolicy()

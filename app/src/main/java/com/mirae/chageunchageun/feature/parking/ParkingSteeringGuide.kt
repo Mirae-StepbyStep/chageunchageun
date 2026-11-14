@@ -19,6 +19,9 @@ const val MAX_STEERING_WHEEL_DEG = 540f
 /** 목표에서 이 각도 안이면 "도달". 1/8바퀴. */
 const val ON_TARGET_DEG = 45f
 
+/** 한번 "도달"한 뒤에는 이 각도를 넘어야 벗어난 것으로 봅니다(음성 히스테리시스). */
+const val OFF_TARGET_DEG = 60f
+
 /** 목표에서 이 각도 안이면 "곧 도달". */
 const val NEAR_DEG = 135f
 
@@ -99,6 +102,7 @@ enum class InstructionKind {
     PARKED;
 
     val isFinish: Boolean get() = this == ARRIVED_SHIFT_P || this == PARKED
+    val isHold: Boolean get() = this == HOLD || this == HOLD_CENTER
 }
 
 /**
@@ -186,7 +190,8 @@ fun steeringInstruction(
         else -> dir
     }
     // 목표를 1/4바퀴 단위로 묶어 키에 넣습니다. 목표가 크게 바뀌면 다시 말하고, 10° 흔들림에는 말하지 않습니다.
-    val targetQuarter = (targetDeg / 90f).roundToInt()
+    // "유지"는 목표가 다시 계산돼도 같은 안내라 목표를 키에 넣지 않습니다.
+    val targetQuarter = if (line.kind.isHold) "" else (targetDeg / 90f).roundToInt().toString()
 
     return SteeringInstruction(
         kind = line.kind,
@@ -224,6 +229,8 @@ const val VOICE_START_TEXT = "주차 안내를 시작합니다. 주변을 확인
  * - [SteeringInstruction.voiceKey]가 바뀌고 [settleMs] 동안 유지되면 새 안내.
  * - 직전 음성에서 [gapMs]가 지나야 다음 안내. 도착(P로 바꾸기)·주차 완료 안내는 바로.
  * - 같은 키는 다시 말하지 않습니다. 안내가 꺼지면 처음 상태로 돌아갑니다.
+ * - "유지" 안내는 키가 바뀌어도 [holdRepeatMs] 안에는 다시 말하지 않습니다.
+ * - 한번 도달하면 남은 각도가 [OFF_TARGET_DEG]를 넘을 때까지 "유지"로 봅니다(경계에서 흔들릴 때 반복 방지).
  *
  * 순수 Kotlin이라 시간(nowMs)을 밖에서 넣고 JVM 테스트로 확인합니다.
  */
@@ -231,16 +238,19 @@ class VoiceGuidePolicy(
     private val settleMs: Long = 700L,
     private val gapMs: Long = 2500L,
     private val afterStartMs: Long = 3500L,
+    private val holdRepeatMs: Long = 8000L,
 ) {
     private var startedAt: Long? = null
     private var lastKey: String? = null
     private var lastSpokenAt: Long = Long.MIN_VALUE / 2
     private var candidateKey: String? = null
     private var candidateSince: Long = 0L
+    private var held: SteeringInstruction? = null
+    private var lastHoldSpokenAt: Long = Long.MIN_VALUE / 2
 
     /** 지금 말해야 할 문장. 없으면 null. 200ms 정도마다 부릅니다. */
-    fun next(active: Boolean, instruction: SteeringInstruction?, nowMs: Long): String? {
-        if (!active || instruction == null) {
+    fun next(active: Boolean, raw: SteeringInstruction?, nowMs: Long): String? {
+        if (!active || raw == null) {
             reset()
             return null
         }
@@ -251,6 +261,11 @@ class VoiceGuidePolicy(
             lastSpokenAt = nowMs
             return VOICE_START_TEXT
         }
+
+        // 히스테리시스: 도달한 뒤 OFF_TARGET_DEG 안에서 흔들리는 동안은 직전 "유지" 안내가 이어지는 것으로 봅니다.
+        val latched = held?.takeIf { !raw.kind.isFinish && abs(raw.remainingDeg) <= OFF_TARGET_DEG }
+        val instruction = if (raw.kind.isHold) raw else latched ?: raw
+        held = instruction.takeIf { it.kind.isHold }
 
         val key = instruction.voiceKey
         if (key == lastKey) {
@@ -267,11 +282,13 @@ class VoiceGuidePolicy(
             if (nowMs - started < afterStartMs) return null
             if (nowMs - candidateSince < settleMs) return null
             if (nowMs - lastSpokenAt < gapMs) return null
+            if (instruction.kind.isHold && nowMs - lastHoldSpokenAt < holdRepeatMs) return null
         }
 
         lastKey = key
         lastSpokenAt = nowMs
         candidateKey = null
+        if (instruction.kind.isHold) lastHoldSpokenAt = nowMs
         return instruction.voiceText
     }
 
@@ -280,5 +297,7 @@ class VoiceGuidePolicy(
         lastKey = null
         lastSpokenAt = Long.MIN_VALUE / 2
         candidateKey = null
+        held = null
+        lastHoldSpokenAt = Long.MIN_VALUE / 2
     }
 }
