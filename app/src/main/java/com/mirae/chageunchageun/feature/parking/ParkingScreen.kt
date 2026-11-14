@@ -21,6 +21,7 @@ import androidx.compose.ui.unit.sp
 import com.mirae.chageunchageun.core.model.Gear
 import com.mirae.chageunchageun.core.model.Signal
 import com.mirae.chageunchageun.core.model.Source
+import com.mirae.chageunchageun.demo.DemoMode
 import com.mirae.chageunchageun.runtime.AppGraph
 import com.mirae.chageunchageun.runtime.PortId
 import com.mirae.chageunchageun.runtime.PortMode
@@ -471,6 +472,20 @@ fun ParkingScreen(graph: AppGraph) {
     }
 
     val devStrip: @Composable () -> Unit = {
+        if (developerMode && DemoMode.enabled && !devControlsWork) {
+            // 시연 모드: 이 화면이 읽는 기어·조향각 포트만 가짜 차량으로 바꿉니다(음성 등 다른 포트는 그대로).
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                Button(onClick = {
+                    graph.portModes.set(PortId.DRIVE_STATE, PortMode.FAKE)
+                    graph.portModes.set(PortId.STEERING, PortMode.FAKE)
+                }) { Text("가짜 차량으로 전환", fontSize = 20.sp) }
+                Text(
+                    "실제 기어를 R로 바꾸면 차량 후방 카메라가 화면을 가려요. 시연은 가짜 기어로 하세요.",
+                    color = DevBadgeText,
+                    fontSize = 18.sp,
+                )
+            }
+        }
         if (developerMode) {
             DevStrip(
                 compact = moving,

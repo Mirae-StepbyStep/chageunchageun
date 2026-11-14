@@ -57,11 +57,11 @@ import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.mirae.chageunchageun.BuildConfig
 import com.mirae.chageunchageun.R
 import com.mirae.chageunchageun.core.model.LampState
 import com.mirae.chageunchageun.core.model.Severity
 import com.mirae.chageunchageun.core.model.WarningType
+import com.mirae.chageunchageun.demo.DemoMode
 import com.mirae.chageunchageun.domain.guidance.WarningGuidance
 import com.mirae.chageunchageun.domain.guidance.WarningGuide
 import com.mirae.chageunchageun.feature.onboarding.label
@@ -93,11 +93,13 @@ fun HomeScreen(graph: AppGraph) {
 }
 
 /**
- * Debug builds only: a long-press opens 디버그 from every Home state, so a fake car left in gear can be fixed
- * from the driving view. Invisible, and does nothing in release builds.
+ * A long-press turns on 시연 모드 (release builds start with it off). Once it is on, a long-press opens 디버그 from
+ * every Home state, so a fake car left in gear can be fixed from the driving view. Invisible.
  */
 private fun Modifier.debugEscape(open: (AppScreen) -> Unit): Modifier =
-    if (BuildConfig.DEBUG) pointerInput(Unit) { detectTapGestures(onLongPress = { open(AppScreen.DEBUG) }) } else this
+    pointerInput(Unit) {
+        detectTapGestures(onLongPress = { if (DemoMode.enabled) open(AppScreen.DEBUG) else DemoMode.enabled = true })
+    }
 
 /** Driving: title, one static sentence, and the active warning if any. No buttons, no scrolling. */
 @Composable
@@ -402,8 +404,8 @@ private fun PillRow(ui: HomeUi, permissionGranted: Boolean, open: (AppScreen) ->
             R.drawable.ic_settings,
             stringResource(R.string.home_settings_pill, location, stringResource(ui.level.label())),
         ) { open(AppScreen.ONBOARDING) }
-        if (BuildConfig.DEBUG) {
-            // Developer tools: one small pill per debug-only screen.
+        if (DemoMode.enabled) {
+            // Demo tools: one small pill per debug-only screen, and a line that says the fake signals are not the car.
             AppScreen.entries.filter { it.debugOnly }.forEach { screen ->
                 Pill(
                     R.drawable.ic_dev_tools,
@@ -411,6 +413,11 @@ private fun PillRow(ui: HomeUi, permissionGranted: Boolean, open: (AppScreen) ->
                     description = stringResource(R.string.home_dev_tool, screen.label),
                 ) { open(screen) }
             }
+            Text(
+                stringResource(R.string.home_demo_mode),
+                Modifier.align(Alignment.CenterVertically),
+                fontSize = 16.sp,
+            )
         }
     }
 }

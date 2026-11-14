@@ -120,6 +120,7 @@ data class SteeringInstruction(
     val targetDeg: Float,
     val remainingDeg: Float,
     val voiceKey: String,
+    val phase: ParkPhase? = null,
 ) {
     val onTarget: Boolean get() = abs(remainingDeg) <= ON_TARGET_DEG
 }
@@ -201,6 +202,7 @@ fun steeringInstruction(
         targetDeg = targetDeg,
         remainingDeg = remaining,
         voiceKey = "${voiceGroup(line.kind)}:$keyDir:${phase?.name ?: ""}:$targetQuarter",
+        phase = phase,
     )
 }
 
@@ -229,6 +231,7 @@ const val VOICE_START_TEXT = "주차 안내를 시작합니다. 주변을 확인
  * - [SteeringInstruction.voiceKey]가 바뀌고 [settleMs] 동안 유지되면 새 안내.
  * - 직전 음성에서 [gapMs]가 지나야 다음 안내. 도착(P로 바꾸기)·주차 완료 안내는 바로.
  * - 같은 키는 다시 말하지 않습니다. 안내가 꺼지면 처음 상태로 돌아갑니다.
+ * - "유지" 안내는 주차 단계([ParkPhase])마다 한 번만 말합니다. 안내가 꺼지거나 reset()하면 다시 말할 수 있습니다.
  * - "유지" 안내는 키가 바뀌어도 [holdRepeatMs] 안에는 다시 말하지 않습니다.
  * - 한번 도달하면 남은 각도가 [OFF_TARGET_DEG]를 넘을 때까지 "유지"로 봅니다(경계에서 흔들릴 때 반복 방지).
  *
@@ -247,6 +250,7 @@ class VoiceGuidePolicy(
     private var candidateSince: Long = 0L
     private var held: SteeringInstruction? = null
     private var lastHoldSpokenAt: Long = Long.MIN_VALUE / 2
+    private val holdSpokenPhases = mutableSetOf<ParkPhase?>()
 
     /** 지금 말해야 할 문장. 없으면 null. 200ms 정도마다 부릅니다. */
     fun next(active: Boolean, raw: SteeringInstruction?, nowMs: Long): String? {
@@ -268,6 +272,8 @@ class VoiceGuidePolicy(
         held = instruction.takeIf { it.kind.isHold }
 
         val key = instruction.voiceKey
+        // 이 단계에서 "유지"를 이미 말했으면 말한 것으로 치고 넘어갑니다(다음 "돌리세요"는 새 안내로 말함).
+        if (instruction.kind.isHold && instruction.phase in holdSpokenPhases) lastKey = key
         if (key == lastKey) {
             candidateKey = null
             return null
@@ -288,7 +294,10 @@ class VoiceGuidePolicy(
         lastKey = key
         lastSpokenAt = nowMs
         candidateKey = null
-        if (instruction.kind.isHold) lastHoldSpokenAt = nowMs
+        if (instruction.kind.isHold) {
+            lastHoldSpokenAt = nowMs
+            holdSpokenPhases += instruction.phase
+        }
         return instruction.voiceText
     }
 
@@ -299,5 +308,6 @@ class VoiceGuidePolicy(
         candidateKey = null
         held = null
         lastHoldSpokenAt = Long.MIN_VALUE / 2
+        holdSpokenPhases.clear()
     }
 }

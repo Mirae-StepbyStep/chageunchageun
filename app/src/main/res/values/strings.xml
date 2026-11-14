@@ -65,7 +65,8 @@
     <string name="home_feature_practice">조작 연습</string>
     <string name="home_feature_practice_desc">정차 중에 와이퍼·라이트 조작을 미리 익혀요</string>
     <string name="home_settings_pill">내 설정 · 위치 %1$s · %2$s</string>
-    <string name="home_dev_tool">개발자 도구: %1$s</string>
+    <string name="home_dev_tool">시연 도구: %1$s</string>
+    <string name="home_demo_mode">시연 모드 · 가짜 차량 신호는 실제 차량 상태가 아닙니다</string>
     <string name="home_driving_title">주행 중</string>
     <string name="home_driving_notice">안내는 음성으로 드려요. 운전에 집중하세요.</string>
 </resources>

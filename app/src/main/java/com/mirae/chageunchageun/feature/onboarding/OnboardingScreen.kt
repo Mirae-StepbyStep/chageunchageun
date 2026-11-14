@@ -41,8 +41,8 @@ import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.mirae.chageunchageun.BuildConfig
 import com.mirae.chageunchageun.R
+import com.mirae.chageunchageun.demo.DemoMode
 import com.mirae.chageunchageun.domain.settings.AdvisorLevel
 import com.mirae.chageunchageun.domain.settings.LocationConsent
 import com.mirae.chageunchageun.runtime.AppGraph
@@ -113,7 +113,7 @@ fun OnboardingScreen(graph: AppGraph) {
                         )
                     }
                 }
-                if (BuildConfig.DEBUG) {
+                if (DemoMode.enabled) {
                     TextButton(onClick = vm::resetFirstRun) {
                         Text(stringResource(R.string.onboarding_debug_reset), fontSize = 18.sp)
                     }

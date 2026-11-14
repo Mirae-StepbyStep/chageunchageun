@@ -163,12 +163,26 @@ class ParkingSteeringGuideTest {
         val off = turn(220f, 270f) // 남은 50°: 화면 문구는 "더 돌리세요"
         assertEquals(InstructionKind.HOLD, hold.kind)
         assertEquals(InstructionKind.TURN_MORE, off.kind)
-        // 20초 동안 0.4초마다 40°↔50°로 흔들립니다. 그 사이 목표도 다시 계산됩니다(270°→300°).
-        val spoken = run(p, 4500, 24500) { t ->
+        // 한 단계 안에서 30초 동안 0.4초마다 40°↔50°로 흔들립니다. 그 사이 목표도 다시 계산됩니다(270°→300°).
+        val spoken = run(p, 4500, 34500) { t ->
             val target = if (t < 14000) 270f else 300f
             turn(if ((t / 400) % 2 == 0L) target - 40f else target - 50f, target)
         }
         assertEquals(listOf(hold.voiceText), spoken.map { it.second })
+    }
+
+    @Test
+    fun holdIsSpokenOncePerPhaseEvenWhenThePhaseFlipsBack() {
+        val p = primed(turn(0f, 270f))
+        // 단계가 2초마다 TURN_IN↔STRAIGHTEN으로 오가고, 목표가 45° 근처라 HOLD↔HOLD_CENTER도 오갑니다.
+        val spoken = run(p, 4500, 34500) { t ->
+            val flip = (t / 2000) % 2 == 0L
+            steeringInstruction(40f, if (flip) 50f else 40f, phase = if (flip) ParkPhase.TURN_IN else ParkPhase.STRAIGHTEN)
+        }
+        assertEquals(2, spoken.size) // 단계마다 한 번
+        // 한 단계에서 유지를 말한 뒤 실제로 벗어나면 "돌리세요"는 말합니다.
+        val away = steeringInstruction(40f, 270f, phase = ParkPhase.TURN_IN)
+        assertEquals(listOf(away.voiceText), run(p, 34700, 40000) { away }.map { it.second })
     }
 
     @Test
