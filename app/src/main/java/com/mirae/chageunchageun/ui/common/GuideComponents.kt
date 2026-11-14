@@ -37,8 +37,8 @@ private val DESIGN_HEIGHT = 720.dp
  * 화면 높이가 기준 높이보다 크면 그 비율만큼 키우고, 작으면 그대로 둡니다.
  */
 @Composable
-fun CarScale(content: @Composable () -> Unit) {
-    BoxWithConstraints(Modifier.fillMaxSize()) {
+fun CarScale(modifier: Modifier = Modifier.fillMaxSize(), content: @Composable () -> Unit) {
+    BoxWithConstraints(modifier) {
         val scale = (maxHeight / DESIGN_HEIGHT).coerceIn(1f, 2.5f)
         val base = LocalDensity.current
         CompositionLocalProvider(LocalDensity provides Density(base.density * scale, base.fontScale)) {
