@@ -147,8 +147,8 @@ private fun ParkedHome(ui: HomeUi, open: (AppScreen) -> Unit) {
 
 /** A card with one line of text and one action. */
 @Composable
-private fun ActionCard(title: String, modifier: Modifier = Modifier.fillMaxWidth(), action: @Composable () -> Unit) {
-    Card(modifier) {
+private fun ActionCard(title: String, modifier: Modifier = Modifier, action: @Composable () -> Unit) {
+    Card(modifier.fillMaxWidth()) {
         Column(Modifier.padding(24.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
             Text(title.keepWords(), style = MaterialTheme.typography.headlineSmall)
             action()
