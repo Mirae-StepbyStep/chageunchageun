@@ -46,8 +46,10 @@ import com.mirae.chageunchageun.core.model.WarningType
 import com.mirae.chageunchageun.domain.guidance.WarningGuidance
 import com.mirae.chageunchageun.domain.guidance.WarningGuide
 import com.mirae.chageunchageun.feature.onboarding.label
+import com.mirae.chageunchageun.feature.warning.severityColors
 import com.mirae.chageunchageun.runtime.AppGraph
 import com.mirae.chageunchageun.runtime.AppScreen
+import com.mirae.chageunchageun.ui.common.CarScale
 import com.mirae.chageunchageun.ui.common.GuideButton
 import com.mirae.chageunchageun.ui.common.GuideOutlinedButton
 import com.mirae.chageunchageun.ui.common.keepWords
@@ -62,7 +64,9 @@ fun HomeScreen(graph: AppGraph) {
     val ui by vm.ui.collectAsStateWithLifecycle()
     val open: (AppScreen) -> Unit = { graph.screenRequests.tryEmit(it) }
 
-    if (ui.canShowDetail) ParkedHome(ui, open) else DrivingHome(ui)
+    CarScale {
+        if (ui.canShowDetail) ParkedHome(ui, open) else DrivingHome(ui)
+    }
 }
 
 /** Driving: title, one static sentence, and the active warning if any. No buttons, no scrolling. */
@@ -114,7 +118,7 @@ private fun ParkedHome(ui: HomeUi, open: (AppScreen) -> Unit) {
             val mirror: @Composable (Modifier) -> Unit = { MirrorCard(it) { open(AppScreen.MIRROR) } }
             val practice: @Composable (Modifier) -> Unit = { modifier ->
                 ActionCard(stringResource(R.string.home_practice_title), modifier) {
-                    GuideOutlinedButton(stringResource(R.string.home_start), { open(AppScreen.PRACTICE) })
+                    GuideOutlinedButton(stringResource(R.string.home_practice_button), { open(AppScreen.PRACTICE) })
                 }
             }
             if (wide) {
@@ -194,7 +198,7 @@ private fun ParkedWarningCard(guide: WarningGuide, others: Int, onDetail: () -> 
     }
 }
 
-/** Driving: the same words as C1's driving banner (severity label, warning name, count of others). Nothing to touch. */
+/** Driving: C1's banner words (severity label, warning name, count of others) plus its one driving-time sentence. Nothing to touch. */
 @Composable
 private fun DrivingWarningCard(guide: WarningGuide, others: Int) {
     Card(Modifier.fillMaxWidth()) {
@@ -210,6 +214,7 @@ private fun DrivingWarningCard(guide: WarningGuide, others: Int) {
                     style = MaterialTheme.typography.titleLarge,
                 )
                 Text(guide.title, style = MaterialTheme.typography.headlineMedium)
+                Text(guide.driveAction.keepWords(), style = MaterialTheme.typography.titleLarge)
             }
             if (others > 0) {
                 Text(stringResource(R.string.home_warning_more, others), style = MaterialTheme.typography.titleLarge)
@@ -218,16 +223,20 @@ private fun DrivingWarningCard(guide: WarningGuide, others: Int) {
     }
 }
 
-/** Warning light in C1's red, on the card itself. Only tire pressure has a telltale drawable; the rest get a warning sign. */
+/**
+ * Warning light on the card itself, in the same severity color as C1's screen (severityColors in WarningScreen.kt).
+ * Only tire pressure has a telltale drawable; the rest get a warning sign.
+ */
 @Composable
 private fun Telltale(guide: WarningGuide) {
     val description = stringResource(R.string.home_warning_icon, guide.title)
+    val tint = severityColors(guide.severity).first
     if (guide.type == WarningType.TIRE_PRESSURE) {
-        Icon(painterResource(R.drawable.ic_telltale_tpms), description, Modifier.size(56.dp), AppColors.WarningRed)
+        Icon(painterResource(R.drawable.ic_telltale_tpms), description, Modifier.size(56.dp), tint)
     } else {
         Text(
             "⚠",
-            color = AppColors.WarningRed,
+            color = tint,
             fontSize = 48.sp,
             modifier = Modifier.semantics { contentDescription = description },
         )

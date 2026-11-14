@@ -48,6 +48,7 @@
     <string name="home_mirror_title">출발 전에 미러를 맞춰 보세요</string>
     <string name="home_mirror_button">미러 맞추기</string>
     <string name="home_practice_title">조작 연습</string>
+    <string name="home_practice_button">연습하기</string>
     <string name="home_settings_change">바꾸기</string>
     <string name="home_driving_notice">안내는 음성으로 드려요. 운전에 집중하세요.</string>
 </resources>
