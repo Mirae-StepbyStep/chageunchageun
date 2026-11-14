@@ -60,11 +60,20 @@ class HomeViewModelTest {
     }
 
     @Test
-    fun `first-run card follows completion`() = runTest {
+    fun `hero asks for setup until first run is completed, then offers the mirror guide`() = runTest {
         val vm = viewModel()
-        assertFalse(vm.ui.value.firstRunCompleted)
+        assertEquals(HomeHero.SETUP, vm.ui.value.hero)
         settings.completeFirstRun()
-        assertTrue(vm.ui.value.firstRunCompleted)
+        assertEquals(HomeHero.MIRROR, vm.ui.value.hero)
+    }
+
+    @Test
+    fun `hero goes back to setup after a reset`() = runTest {
+        settings.completeFirstRun()
+        val vm = viewModel()
+        assertEquals(HomeHero.MIRROR, vm.ui.value.hero)
+        settings.resetFirstRun()
+        assertEquals(HomeHero.SETUP, vm.ui.value.hero)
     }
 
     @Test
@@ -132,10 +141,10 @@ class HomeViewModelTest {
     }
 
     @Test
-    fun `without settings there is no first-run card and no warning`() = runTest {
+    fun `without settings the hero is the mirror guide and there is no warning`() = runTest {
         val vm = viewModel(withSettings = false)
         bus.warnings.value = setOf(WarningType.ENGINE)
-        assertTrue(vm.ui.value.firstRunCompleted)
+        assertEquals(HomeHero.MIRROR, vm.ui.value.hero)
         assertNull(vm.ui.value.parkedWarning)
     }
 }

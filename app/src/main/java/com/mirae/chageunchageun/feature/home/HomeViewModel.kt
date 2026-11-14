@@ -41,12 +41,17 @@ data class HomeUi(
     val consent: LocationConsent = LocationConsent.NOT_ASKED,
     val firstRunCompleted: Boolean = true,
 ) {
+    /** What the hero card offers: finish setup first, then the mirror guide. */
+    val hero: HomeHero get() = if (firstRunCompleted) HomeHero.MIRROR else HomeHero.SETUP
+
     /** The warning card while parked. */
     val parkedWarning: WarningGuide? get() = warnings.firstOrNull()
 
     /** The warning card while driving: same rule as C1's driving banner (INFO is not shown). */
     val drivingWarning: WarningGuide? get() = warnings.firstOrNull { it.severity != Severity.INFO }
 }
+
+enum class HomeHero { SETUP, MIRROR }
 
 enum class LocationStatus { ON, OFF, PERMISSION_OFF }
 

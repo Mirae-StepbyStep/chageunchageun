@@ -37,18 +37,35 @@
     <string name="onboarding_debug_reset">처음 설정 다시 하기</string>
 
     <!-- Home (feature/home) -->
+    <string name="home_tagline">상황이 오면 먼저 알려주는 운전 매뉴얼</string>
+    <string name="home_chip_parked">정차 중</string>
     <string name="home_level_label">안내: %1$s</string>
+    <string name="home_hero_label">출발 전</string>
+    <string name="home_hero_title">미러부터 맞추고 출발해요</string>
+    <string name="home_hero_subtitle">사이드미러와 룸미러를 그림으로 안내해요</string>
+    <string name="home_mirror_button">미러 맞추기</string>
     <string name="home_first_run_title">처음 설정을 마쳐 주세요</string>
     <string name="home_start">시작하기</string>
-    <string name="home_warning_summary">%1$s · %2$s</string>
+    <string name="home_car_title">지금 내 차</string>
+    <string name="home_car_gear">기어</string>
+    <string name="home_car_high_beam">상향등</string>
+    <string name="home_car_on">켜짐</string>
+    <string name="home_car_off">꺼짐</string>
+    <string name="home_car_drl">주간주행등</string>
+    <string name="home_car_unknown">-</string>
+    <string name="home_no_warning">켜진 경고등 없음</string>
+    <string name="home_warning_tap">%1$s · 눌러서 조치 보기</string>
     <string name="home_warning_more">외 %1$d건</string>
-    <string name="home_warning_detail">자세히 보기</string>
     <string name="home_warning_severity">%1$s 경고</string>
     <string name="home_warning_icon">%1$s 경고등</string>
-    <string name="home_mirror_title">출발 전에 미러를 맞춰 보세요</string>
-    <string name="home_mirror_button">미러 맞추기</string>
-    <string name="home_practice_title">조작 연습</string>
-    <string name="home_practice_button">연습하기</string>
-    <string name="home_settings_change">바꾸기</string>
+    <string name="home_feature_parking">스마트 주차 코치</string>
+    <string name="home_feature_parking_desc">주차장에 도착하면 내 차 크기와 핸들 돌릴 양을 알려줘요</string>
+    <string name="home_feature_warning">경고등 안내</string>
+    <string name="home_feature_warning_desc">계기판 경고등의 뜻과 위험도, 지금 할 일을 알려줘요</string>
+    <string name="home_feature_practice">조작 연습</string>
+    <string name="home_feature_practice_desc">정차 중에 와이퍼·라이트 조작을 미리 익혀요</string>
+    <string name="home_settings_pill">내 설정 · 위치 %1$s · %2$s</string>
+    <string name="home_dev_tool">개발자 도구: %1$s</string>
+    <string name="home_driving_title">주행 중</string>
     <string name="home_driving_notice">안내는 음성으로 드려요. 운전에 집중하세요.</string>
 </resources>
