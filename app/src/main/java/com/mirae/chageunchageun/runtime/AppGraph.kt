@@ -9,6 +9,8 @@ import com.mirae.chageunchageun.core.port.SpeechOutput
 import com.mirae.chageunchageun.core.port.SteeringSource
 import com.mirae.chageunchageun.core.port.VehicleSpecSource
 import com.mirae.chageunchageun.core.port.WarningSource
+import com.mirae.chageunchageun.data.settings.PrefsSettingsStore
+import com.mirae.chageunchageun.data.settings.StoredUserSettings
 import com.mirae.chageunchageun.demo.FakeControlsSource
 import com.mirae.chageunchageun.demo.FakeDriveStateSource
 import com.mirae.chageunchageun.demo.FakeLocationSource
@@ -21,6 +23,7 @@ import com.mirae.chageunchageun.demo.FakeWarningSource
 import com.mirae.chageunchageun.demo.Scenario
 import com.mirae.chageunchageun.demo.ScenarioParser
 import com.mirae.chageunchageun.demo.ScenarioPlayer
+import com.mirae.chageunchageun.domain.settings.UserSettings
 import com.mirae.chageunchageun.feature.warning.WarningAnnouncer
 import com.mirae.chageunchageun.platform.car.CarDriveStateSource
 import com.mirae.chageunchageun.platform.car.CarSession
@@ -84,6 +87,9 @@ class AppGraph(private val context: Context, val appScope: CoroutineScope) {
 
     // 앱 공용 런타임
     val driveRuntime = DriveRuntime(driveState, appScope)
+
+    /** 앱 내부 설정(첫 실행 완료, 위치 동의, 안내 깊이). 포트가 아니라서 실제·가짜 전환이 없습니다. */
+    val userSettings: UserSettings = StoredUserSettings(PrefsSettingsStore(context))
 
     /** 화면 전환 요청. MainActivity가 받아 해당 화면으로 바꿉니다. 사용자가 그 뒤에 다른 화면으로 가는 것은 막지 않습니다. */
     val screenRequests = MutableSharedFlow<AppScreen>(extraBufferCapacity = 1)
