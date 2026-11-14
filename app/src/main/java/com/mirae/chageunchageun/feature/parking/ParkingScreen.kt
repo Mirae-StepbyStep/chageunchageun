@@ -304,7 +304,13 @@ fun ParkingScreen(graph: AppGraph) {
         }
     }
 
-    // Leaving developer mode or this screen never leaves the fake car rolling.
+    // Leaving developer mode or this screen always parks the fake car: sim paused, gear P, speed 0.
+    // A test run writes R to FakeVehicleBus.gear; left there, Home stays in its driving view with no way out.
+    fun parkFakeCar() {
+        sim.pause("개발자 모드 종료로 멈춤")
+        bus.gear.value = Gear.P
+        speedMps.value = 0f
+    }
     LaunchedEffect(developerMode) {
         if (!developerMode) {
             sim.pause("개발자 모드 종료로 멈춤")
@@ -313,9 +319,7 @@ fun ParkingScreen(graph: AppGraph) {
         }
     }
     DisposableEffect(Unit) {
-        onDispose {
-            if (sim.state == SimState.RUNNING && devControlsWork) speedMps.value = 0f
-        }
+        onDispose { parkFakeCar() }
     }
 
     // Voice: one speaker, one policy, the same instruction object the screen shows.
@@ -552,7 +556,10 @@ fun ParkingScreen(graph: AppGraph) {
         ) {
             Header(
                 developerMode = developerMode,
-                onToggleDeveloper = { developerMode = !developerMode },
+                onToggleDeveloper = {
+                    if (developerMode) parkFakeCar()
+                    developerMode = !developerMode
+                },
                 notice = when {
                     developerMode -> "개발자 테스트 · 가상 데이터"
                     simulatedSignals -> "데모 데이터 · 실제 차량 상태가 아닙니다"

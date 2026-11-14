@@ -8,6 +8,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -41,6 +42,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -86,18 +88,29 @@ fun HomeScreen(graph: AppGraph) {
     val open: (AppScreen) -> Unit = { graph.screenRequests.tryEmit(it) }
 
     CarScale {
-        if (ui.canShowDetail) ParkedHome(ui, open) else DrivingHome(ui)
+        if (ui.canShowDetail) ParkedHome(ui, open) else DrivingHome(ui, open)
     }
 }
 
+/**
+ * Debug builds only: a long-press opens 디버그 from every Home state, so a fake car left in gear can be fixed
+ * from the driving view. Invisible, and does nothing in release builds.
+ */
+private fun Modifier.debugEscape(open: (AppScreen) -> Unit): Modifier =
+    if (BuildConfig.DEBUG) pointerInput(Unit) { detectTapGestures(onLongPress = { open(AppScreen.DEBUG) }) } else this
+
 /** Driving: title, one static sentence, and the active warning if any. No buttons, no scrolling. */
 @Composable
-private fun DrivingHome(ui: HomeUi) {
+private fun DrivingHome(ui: HomeUi, open: (AppScreen) -> Unit) {
     Column(
         Modifier.fillMaxSize().padding(32.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
-        Text(stringResource(R.string.home_driving_title), style = MaterialTheme.typography.displaySmall)
+        Text(
+            stringResource(R.string.home_driving_title),
+            style = MaterialTheme.typography.displaySmall,
+            modifier = Modifier.debugEscape(open),
+        )
         Text(stringResource(R.string.home_driving_notice).keepWords(), style = MaterialTheme.typography.headlineMedium)
         ui.drivingWarning?.let { DrivingWarningCard(it, others = ui.warnings.size - 1) }
     }
@@ -120,7 +133,7 @@ private fun ParkedHome(ui: HomeUi, open: (AppScreen) -> Unit) {
             Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 32.dp, vertical = 24.dp),
             verticalArrangement = Arrangement.spacedBy(Gap),
         ) {
-            Header(ui)
+            Header(ui, open)
 
             // Row 1: hero (2) and "지금 내 차" (1).
             if (wide) {
@@ -160,7 +173,7 @@ private fun ParkedHome(ui: HomeUi, open: (AppScreen) -> Unit) {
 }
 
 @Composable
-private fun Header(ui: HomeUi) {
+private fun Header(ui: HomeUi, open: (AppScreen) -> Unit) {
     Row(
         Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
@@ -172,11 +185,13 @@ private fun Header(ui: HomeUi) {
             contentDescription = null, // the app name is right next to it
             modifier = Modifier
                 .size(52.dp)
+                .debugEscape(open)
                 .border(1.dp, MaterialTheme.colorScheme.onBackground.copy(alpha = 0.18f), RoundedCornerShape(12.dp)),
         )
         Column(Modifier.weight(1f)) {
             Text(
                 stringResource(R.string.app_name),
+                modifier = Modifier.debugEscape(open),
                 fontSize = 26.sp,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.primary,
