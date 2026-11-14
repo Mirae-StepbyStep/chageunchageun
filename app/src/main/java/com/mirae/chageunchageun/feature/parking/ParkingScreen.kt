@@ -22,6 +22,8 @@ import com.mirae.chageunchageun.core.model.Gear
 import com.mirae.chageunchageun.core.model.Signal
 import com.mirae.chageunchageun.core.model.Source
 import com.mirae.chageunchageun.runtime.AppGraph
+import com.mirae.chageunchageun.runtime.PortId
+import com.mirae.chageunchageun.runtime.PortMode
 import java.util.Locale
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -180,6 +182,12 @@ fun ParkingScreen(graph: AppGraph) {
     // Developer writes reach this screen only while the signals come from FakeVehicleBus.
     val devControlsWork =
         listOf(gearSource, angleSource, speedSource).all { it == null || it == Source.SCRIPTED }
+
+    // "가상 도착" only writes FakeVehicleBus.arrivals, which reaches this screen through the LOCATION port.
+    // It needs that port to be FAKE, not gear, steering or speed.
+    val locationMode by graph.portModes.mode(PortId.LOCATION)
+        .collectAsState(initial = graph.portModes.get(PortId.LOCATION))
+    val arrivalControlWorks = arrivalControlWorks(locationMode)
 
     val moving = liveSpeed != null && liveSpeed > MOVING_SPEED_MPS
 
@@ -379,8 +387,9 @@ fun ParkingScreen(graph: AppGraph) {
 
     // In developer mode the waiting card offers the one next step.
     val nextStep: Pair<String, () -> Unit>? = when {
-        !developerMode || !devControlsWork -> null
-        !arrived -> "가상 도착" to sendArrival
+        !developerMode -> null
+        !arrived -> if (arrivalControlWorks) "가상 도착" to sendArrival else null
+        !devControlsWork -> null
         !inReverse && !status.done -> "R(후진)로 바꾸기" to { bus.gear.value = Gear.R }
         else -> null
     }
@@ -462,6 +471,7 @@ fun ParkingScreen(graph: AppGraph) {
             DevStrip(
                 compact = moving,
                 enabled = devControlsWork,
+                arrivalEnabled = arrivalControlWorks,
                 expanded = devExpanded,
                 onExpanded = { devExpanded = it },
                 arrived = arrived,
@@ -852,6 +862,7 @@ private fun FooterRow(
 private fun DevStrip(
     compact: Boolean,
     enabled: Boolean,
+    arrivalEnabled: Boolean,
     expanded: Boolean,
     onExpanded: (Boolean) -> Unit,
     arrived: Boolean,
@@ -911,7 +922,7 @@ private fun DevStrip(
                 }
 
                 if (!compact) {
-                    SimButton(if (arrived) "도착 해제" else "가상 도착", enabled, onClick = onToggleArrival)
+                    SimButton(if (arrived) "도착 해제" else "가상 도착", arrivalEnabled, onClick = onToggleArrival)
                     listOf(Gear.P, Gear.R, Gear.N, Gear.D).forEach { g ->
                         StripChip(g.name, gear == g, enabled) { onGear(g) }
                     }
@@ -1029,6 +1040,13 @@ private fun DevStrip(
                     SimButton("음성 테스트(TTS)", true, onClick = onVoiceTest)
                 }
 
+                if (!arrivalEnabled) {
+                    Text(
+                        text = "위치·도착 포트를 가짜로 바꾸면 쓸 수 있어요",
+                        color = DevBadgeText,
+                        fontSize = 16.sp
+                    )
+                }
                 if (!enabled) {
                     Text(
                         text = "차량 신호가 FakeVehicleBus가 아니라서 개발자 조작이 반영되지 않아요.",
@@ -1109,3 +1127,6 @@ private fun SimButton(
         }
     }
 }
+
+/** The developer "가상 도착" reaches this screen only while the LOCATION port is the fake one. */
+internal fun arrivalControlWorks(locationMode: PortMode): Boolean = locationMode == PortMode.FAKE
