@@ -22,9 +22,26 @@ android {
     // AAOS Car API (CarPropertyManager, CarUxRestrictionsManager). platform/car 에서만 사용합니다.
     useLibrary("android.car")
 
+    // Release 서명. 키스토어와 비밀번호는 저장소 밖에 둡니다: ~/.gradle/gradle.properties 또는 같은 이름의 환경 변수.
+    // 값이 없으면 release는 서명 없이 빌드됩니다(debug 빌드와 테스트에는 필요 없음).
+    fun signingValue(name: String): String? =
+        providers.gradleProperty(name).orElse(providers.environmentVariable(name)).orNull
+    val releaseStoreFile = signingValue("CHAGEUN_RELEASE_STORE_FILE")
+    signingConfigs {
+        if (releaseStoreFile != null) {
+            create("release") {
+                storeFile = file(releaseStoreFile)
+                storePassword = signingValue("CHAGEUN_RELEASE_STORE_PASSWORD")
+                keyAlias = signingValue("CHAGEUN_RELEASE_KEY_ALIAS")
+                keyPassword = signingValue("CHAGEUN_RELEASE_KEY_PASSWORD")
+            }
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = false
+            signingConfig = signingConfigs.findByName("release")
         }
     }
     compileOptions {

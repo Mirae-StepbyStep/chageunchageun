@@ -8,6 +8,11 @@ build/
 .cxx
 *.apk
 *.aab
+# 공모전 제출용 APK만 올립니다
+!/apk/*.apk
+# 서명 키는 저장소 밖에 둡니다
+*.jks
+*.keystore
 .DS_Store
 
 # IDE: 공유 설정 외 개인 설정은 올리지 않습니다
