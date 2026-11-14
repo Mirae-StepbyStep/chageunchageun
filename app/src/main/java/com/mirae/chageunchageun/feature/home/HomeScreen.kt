@@ -42,6 +42,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.mirae.chageunchageun.R
 import com.mirae.chageunchageun.core.model.LampState
+import com.mirae.chageunchageun.core.model.Severity
 import com.mirae.chageunchageun.core.model.WarningType
 import com.mirae.chageunchageun.domain.guidance.WarningGuidance
 import com.mirae.chageunchageun.domain.guidance.WarningGuide
@@ -224,13 +225,16 @@ private fun DrivingWarningCard(guide: WarningGuide, others: Int) {
 }
 
 /**
- * Warning light on the card itself, in the same severity color as C1's screen (severityColors in WarningScreen.kt).
+ * Warning light on the card itself. Caution and danger use the same color as C1's screen
+ * (severityColors in WarningScreen.kt).
  * Only tire pressure has a telltale drawable; the rest get a warning sign.
  */
 @Composable
 private fun Telltale(guide: WarningGuide) {
     val description = stringResource(R.string.home_warning_icon, guide.title)
-    val tint = severityColors(guide.severity).first
+    // ActiveBlue is never an icon or text color on a light background, so INFO uses primary here.
+    // TODO(c1): C1's severityColors maps INFO to ActiveBlue; its own screen has the same issue.
+    val tint = if (guide.severity == Severity.INFO) MaterialTheme.colorScheme.primary else severityColors(guide.severity).first
     if (guide.type == WarningType.TIRE_PRESSURE) {
         Icon(painterResource(R.drawable.ic_telltale_tpms), description, Modifier.size(56.dp), tint)
     } else {
