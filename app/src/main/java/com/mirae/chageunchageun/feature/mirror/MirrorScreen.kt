@@ -1,5 +1,7 @@
 package com.mirae.chageunchageun.feature.mirror
 
+import android.provider.Settings
+import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
@@ -24,8 +26,10 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -43,11 +47,17 @@ import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.clipPath
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.TextMeasurer
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import kotlinx.coroutines.delay
 import com.mirae.chageunchageun.domain.mirror.MirrorGuide
 import com.mirae.chageunchageun.domain.mirror.MirrorStep
 import com.mirae.chageunchageun.runtime.AppGraph
@@ -107,6 +117,14 @@ private fun StepPanel(ui: MirrorUi, vm: MirrorViewModel, onDone: () -> Unit, mod
         if (ui.step.howTo.isNotEmpty()) {
             Text(
                 ui.step.howTo.keepWords(),
+                style = MaterialTheme.typography.titleLarge,
+                lineHeight = 32.sp,
+                color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
+            )
+        }
+        if (ui.step.doneWhen.isNotEmpty()) {
+            Text(
+                ui.step.doneWhen.keepWords(),
                 style = MaterialTheme.typography.titleLarge,
                 lineHeight = 32.sp,
                 color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
@@ -184,22 +202,43 @@ private fun PicturePanel(ui: MirrorUi, modifier: Modifier) {
         if (ui.animated) {
             // 단계가 바뀌면 애니메이션을 처음(어긋난 상태)부터 다시 시작합니다.
             key(ui.step) {
-                val transition = rememberInfiniteTransition(label = "mirror")
-                val progress by transition.animateFloat(
-                    initialValue = 0f,
-                    targetValue = 1f,
-                    animationSpec = infiniteRepeatable(tween(MirrorGuide.LOOP_MS, easing = LinearEasing), RepeatMode.Restart),
-                    label = "progress",
-                )
-                val misalignment = MirrorGuide.misalignment(progress)
-                Canvas(Modifier.fillMaxWidth().weight(1f).graphicsLayer { alpha = MirrorGuide.fade(progress) }) {
-                    when (ui.step) {
-                        MirrorStep.ROOM -> drawRoomMirror(misalignment, scene)
-                        MirrorStep.LEFT -> drawSideMirror(misalignment, scene, bodyOnRight = true)
-                        else -> drawSideMirror(misalignment, scene, bodyOnRight = false)
+                val measurer = rememberTextMeasurer()
+                if (ui.step == MirrorStep.ROOM) {
+                    // 룸미러는 한 번만 보여 줍니다: 어긋난 채 잠깐 멈췄다가 약 1.5초 동안 점선 안으로 들어가고 멈춥니다.
+                    // 시스템 애니메이션 배율이 0이면 움직이지 않고 맞은 상태만 보여 줍니다.
+                    val context = LocalContext.current
+                    val animatorScale = remember {
+                        Settings.Global.getFloat(context.contentResolver, Settings.Global.ANIMATOR_DURATION_SCALE, 1f)
                     }
+                    val slide = remember { Animatable(1f) }
+                    LaunchedEffect(Unit) {
+                        if (animatorScale > 0f) {
+                            delay(ROOM_HOLD_MS)
+                            slide.animateTo(0f, tween(ROOM_SLIDE_MS))
+                        } else {
+                            slide.snapTo(0f)
+                        }
+                    }
+                    Canvas(Modifier.fillMaxWidth().weight(1f)) { drawRoomMirror(slide.value, scene, measurer) }
+                    StatusPill(aligned = slide.value == 0f, hint = "흰 뒷유리를 점선 안에 맞춰주세요")
+                } else {
+                    val transition = rememberInfiniteTransition(label = "mirror")
+                    val progress by transition.animateFloat(
+                        initialValue = 0f,
+                        targetValue = 1f,
+                        animationSpec = infiniteRepeatable(tween(MirrorGuide.LOOP_MS, easing = LinearEasing), RepeatMode.Restart),
+                        label = "progress",
+                    )
+                    val misalignment = MirrorGuide.misalignment(progress)
+                    Canvas(Modifier.fillMaxWidth().weight(1f).graphicsLayer { alpha = MirrorGuide.fade(progress) }) {
+                        when (ui.step) {
+                            MirrorStep.ROOM -> drawRoomMirror(misalignment, scene, measurer)
+                            MirrorStep.LEFT -> drawSideMirror(misalignment, scene, bodyOnRight = true)
+                            else -> drawSideMirror(misalignment, scene, bodyOnRight = false)
+                        }
+                    }
+                    StatusPill(aligned = misalignment == 0f)
                 }
-                StatusPill(aligned = misalignment == 0f)
             }
         } else {
             Canvas(Modifier.fillMaxWidth().weight(1f)) {
@@ -211,7 +250,7 @@ private fun PicturePanel(ui: MirrorUi, modifier: Modifier) {
 
 /** 그림 아래 상태 줄. 맞은 순간이 곁눈으로도 보이게 줄 전체의 색과 표시를 바꿉니다. */
 @Composable
-private fun StatusPill(aligned: Boolean) {
+private fun StatusPill(aligned: Boolean, hint: String = "점선 자리에 오게 맞춰주세요") {
     val scheme = MaterialTheme.colorScheme
     val line = scheme.onSurface
     Row(
@@ -239,7 +278,7 @@ private fun StatusPill(aligned: Boolean) {
             }
         }
         Text(
-            if (aligned) "이렇게 보이면 맞습니다" else "점선 자리에 오게 맞춰주세요",
+            if (aligned) "이렇게 보이면 맞습니다" else hint,
             fontSize = 24.sp,
             fontWeight = FontWeight.SemiBold,
             color = line,
@@ -301,7 +340,7 @@ private fun DrawScope.drawPosture(line: Color) {
 }
 
 /** 룸미러: 뒷유리(밝은 창)가 거울 가운데 기준 틀(점선)에 들어옵니다. */
-private fun DrawScope.drawRoomMirror(misalignment: Float, scene: Scene) {
+private fun DrawScope.drawRoomMirror(misalignment: Float, scene: Scene, measurer: TextMeasurer) {
     val line = scene.line
     val box = fitRect(1.9f)
     val w = box.width
@@ -313,6 +352,11 @@ private fun DrawScope.drawRoomMirror(misalignment: Float, scene: Scene) {
     val target = Offset(mirror.center.x - window.width / 2f, mirror.center.y - window.height / 2f)
     val shift = Offset(w * 0.18f, -mh * 0.30f) * misalignment
     val aligned = misalignment == 0f
+    // 그림 안 이름표. 거울 크기에 맞춰 키우되 12sp보다 작아지지 않게 합니다.
+    val labelPx = maxOf(mh * 0.085f, 12.sp.toPx())
+    val pad = mh * 0.04f
+    fun label(text: String, color: Color) =
+        measurer.measure(text, TextStyle(color = color, fontSize = labelPx.toSp(), fontWeight = FontWeight.SemiBold))
 
     // 천장에 붙는 지지대
     drawLine(line, Offset(mirror.center.x, box.top), Offset(mirror.center.x, mirror.top), mh * 0.12f, StrokeCap.Round)
@@ -334,6 +378,7 @@ private fun DrawScope.drawRoomMirror(misalignment: Float, scene: Scene) {
                 close()
             }
             drawPath(road, scene.lane)
+            drawText(label("뒷유리", line), topLeft = glass.topLeft + Offset(pad, pad * 0.5f))
         }
         // 뒷좌석 머리 받침
         val rest = Size(w * 0.09f, mh * 0.30f)
@@ -345,7 +390,16 @@ private fun DrawScope.drawRoomMirror(misalignment: Float, scene: Scene) {
                 CornerRadius(rest.width * 0.35f),
             )
         }
-        // 맞출 자리
+        val headrests = label("뒷좌석 머리받침", AppColors.White)
+        drawText(
+            headrests,
+            topLeft = Offset(mirror.center.x - headrests.size.width / 2f, mirror.bottom - headrests.size.height - pad) + shift,
+        )
+        // 맞출 자리. 뒷유리가 들어오기 전에는 점선 왼쪽에 "여기로"를 적습니다.
+        if (!aligned) {
+            val here = label("여기로", AppColors.White)
+            drawText(here, topLeft = Offset(target.x - here.size.width - pad, mirror.center.y - here.size.height / 2f))
+        }
         drawRoundRect(
             AppColors.ActiveBlue, target, window, CornerRadius(mh * 0.10f),
             style = if (aligned) Stroke(mh * 0.06f) else dashed(mh * 0.03f),
@@ -455,3 +509,7 @@ private fun DrawScope.drawDone() {
     }
     drawPath(check, AppColors.Black, style = Stroke(r * 0.16f, cap = StrokeCap.Round, join = StrokeJoin.Round))
 }
+
+/** 룸미러 그림: 어긋난 채 멈춰 있는 시간과 점선 안으로 들어가는 시간(ms). */
+private const val ROOM_HOLD_MS = 600L
+private const val ROOM_SLIDE_MS = 1_500
